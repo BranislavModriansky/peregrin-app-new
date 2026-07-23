@@ -11,7 +11,7 @@ def panel(id: str, title: str, *content):
         ui.div(
             ui.div(
                 ui.span("⣿", class_="qp-grip", title="Drag to move"),
-                ui.span(title, class_="qp-title"),
+                ui.span(title, class_="qp-title", **{"data-qp-title": title}),
                 class_="qp-header-left",
             ),
             ui.div(
@@ -39,18 +39,44 @@ def panel(id: str, title: str, *content):
 
 
 def quad_layout(top_left, top_right, bottom_left, bottom_right):
-    """Four flexible panels arranged in a 2x2 resizable, swappable grid."""
+    """Four flexible panels arranged in two resizable, swappable columns."""
     return ui.div(
         ui.include_css(path_to_css / "quadpanel.css"),
         ui.include_js(path_to_js / "quadpanel.js"),
+        # Navbar shown only in single-panel (maximized) mode.
         ui.div(
-            ui.div(top_left, class_="qp-slot", id="qp-slot-tl", **{"data-slot": "tl"}),
-            ui.div(top_right, class_="qp-slot", id="qp-slot-tr", **{"data-slot": "tr"}),
-            ui.div(bottom_left, class_="qp-slot", id="qp-slot-bl", **{"data-slot": "bl"}),
-            ui.div(bottom_right, class_="qp-slot", id="qp-slot-br", **{"data-slot": "br"}),
+            ui.tags.button(
+                ui.HTML("&#8862;"),
+                " Grid view",
+                class_="qp-nav-back",
+                type="button",
+                title="Back to 4-panel view",
+            ),
+            ui.div(class_="qp-nav-links", id="qp-nav-links"),
+            class_="qp-navbar",
+            id="qp-navbar",
+        ),
+        ui.div(
+            # Left column: two stacked slots + horizontal divider.
+            ui.div(
+                ui.div(top_left, class_="qp-slot", id="qp-slot-tl", **{"data-slot": "tl"}),
+                ui.div(class_="qp-divider qp-divider-h", **{"data-col": "left"}),
+                ui.div(bottom_left, class_="qp-slot", id="qp-slot-bl", **{"data-slot": "bl"}),
+                class_="qp-col",
+                id="qp-col-left",
+                **{"data-col": "left"},
+            ),
+            # Single shared vertical divider.
             ui.div(class_="qp-divider qp-divider-v", id="qp-divider-v"),
-            ui.div(class_="qp-divider qp-divider-h", id="qp-divider-h"),
-            ui.div(class_="qp-divider-center", id="qp-divider-center"),
+            # Right column.
+            ui.div(
+                ui.div(top_right, class_="qp-slot", id="qp-slot-tr", **{"data-slot": "tr"}),
+                ui.div(class_="qp-divider qp-divider-h", **{"data-col": "right"}),
+                ui.div(bottom_right, class_="qp-slot", id="qp-slot-br", **{"data-slot": "br"}),
+                class_="qp-col",
+                id="qp-col-right",
+                **{"data-col": "right"},
+            ),
             class_="qp-grid",
             id="qp-container",
         ),
