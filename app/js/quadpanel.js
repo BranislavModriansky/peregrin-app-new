@@ -23,9 +23,9 @@
     const root = grid.closest(".qp-root");
 
     const state = {
-      colFrac: 0.5, // left column width share
+      colFrac: 0.35, // left column width share
       rowLeft: 0.5, // left column top-row share
-      rowRight: 0.5, // right column top-row share
+      rowRight: 0.65, // right column top-row share
       maximized: null, // slot id string when in single-panel mode
     };
 
@@ -34,6 +34,10 @@
     wireButtons(root, grid, state);
     wireResizers(grid, state);
     wireDragDrop(grid, state);
+
+    // Collapse the Console panel (bottom-left) by default.
+    const consoleSlot = grid.querySelector('#qp-col-left .qp-slot:last-child');
+    if (consoleSlot) toggleCollapse(consoleSlot);
 
     window.addEventListener("resize", () => applyFractions(grid, state));
   }
