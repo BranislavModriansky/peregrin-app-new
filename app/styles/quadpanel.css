@@ -1,16 +1,54 @@
 :root {
   --c-1: #d7d7df;
+  --border: #dee2e6;
 }
 
-.navbar {
+
+
+body {
+  background-color: #f6f5f8 !important;
+}
+
+body {
+  background-color: #fff !important;
+}
+
+
+/* .nav.navbar-nav {
+  background-color: #f6f5f8 !important;
+} */
+a.nav-link:hover,
+a.nav-link.active,
+a.nav-link {
   border-bottom: none !important;
+  border-radius: 0px !important;
+  font-weight: 600 !important;
+}
+
+.app-title {
+  font-weight: 600 !important;
+  font-size: 1.2rem !important;
+  color: var(--color-secondary) !important;
+  text-decoration: none !important;
 }
 
 
+span.navbar-brand {
+  order: 1 !important;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0px;
+}
+
+bslib-input-dark-mode {
+  font-size: 0.8rem !important;
+  margin-top: 0.4rem !important;
+}
 
 
 .qp-root {
-  height: 90vh;
+  height: calc(100vh - 2.65rem);
   padding: 0rem;
   box-sizing: border-box;
   display: flex;
@@ -20,41 +58,55 @@
 /* --- Navbar (single-panel mode only) --- */
 .qp-navbar {
   display: none;
+  position: relative;
   align-items: center;
-  gap: 12px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
+  padding: 0 0;
   background: #f3f4f6;
-  /* border: 0.1rem solid var(--c-1); */
-  border-radius: 6px;
+  border-radius: 0;
+  border-bottom: 1px solid black;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  min-height: 1.875rem;
 }
 .qp-single-mode .qp-navbar { display: flex; }
 
-.qp-nav-back {
-  border: 1px solid #c8ccd2;
-  background: #fff;
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #3c4043;
+.qp-single-mode .qp-navbar {
+  border-bottom: 0.0625rem solid var(--c-1);
+  justify-content: space-between;
 }
-.qp-nav-back:hover { background: #e8eaed; }
 
-.qp-nav-links { display: flex; gap: 4px; }
+.qp-nav-links { display: flex; gap: 0}
 .qp-nav-link {
   border: none;
   background: transparent;
-  padding: 4px 12px;
-  border-radius: 4px;
+  padding: 0.3125rem 0.8125rem;
+  border-radius: 0;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #5f6368;
+  border-right: 0.0625rem solid var(--c-1);
 }
 .qp-nav-link:hover { background: #e2e5e9; color: #202124; }
-.qp-nav-active { background: #4285f4; color: #fff; }
-.qp-nav-active:hover { background: #3b78e7; color: #fff; }
+.qp-nav-active {
+  color: #3c4043;
+  position: relative;
+  /* Shift down by the thickness of the navbar border */
+  top: 0.0625rem; 
+  margin-top: -0.0625rem;
+  /* Must have a background color to hide what's behind it */
+  background: linear-gradient(to bottom, #edf0f4, #fff, #fff);
+  z-index: 1;
+}
+
+
+
+
+
+
+[type="button"]:not(:disabled) {
+  order: 1;
+}
 
 /* --- Grid: two columns --- */
 .qp-grid {
@@ -86,7 +138,6 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  /* transition: flex-grow 0.2s ease, flex-basis 0.2s ease; */
 }
 
 /* --- Collapse: snap to top / bottom --- */
@@ -104,29 +155,32 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border: 0.05rem solid var(--c-1);
-  border-radius: 0px;
+  border: 0.0625rem solid var(--c-1);
+  border-radius: 0;
   background: #ffffff;
-  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.26);
   overflow: hidden;
+}
+
+.qp-grid-mode .qp-slot {
+  box-shadow: 0 0 0.125rem rgba(93, 92, 92, 0.212);
 }
 
 .qp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
   background: #f3f4f6;
   border-bottom: 1px solid #e2e5e9;
   user-select: none;
-  min-height: 30px;
+  min-height: 1.875rem;
 }
 .qp-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.qp-grip { cursor: grab; color: #9aa0a6; font-size: 12px; line-height: 1; }
+.qp-grip { cursor: grab; color: #9aa0a6; font-size: 0.75rem }
 .qp-grip:active { cursor: grabbing; }
 .qp-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 0.8rem;
   color: #3c4043;
   white-space: nowrap;
   overflow: hidden;
@@ -139,9 +193,9 @@
   cursor: pointer;
   width: 24px;
   height: 22px;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   color: #5f6368;
-  font-size: 12px;
+  font-size: 0.7rem;
   line-height: 1;
 }
 .qp-btn:hover { background: #e2e5e9; color: #202124; }
@@ -149,8 +203,8 @@
 
 
 /* --- Dividers --- */
-.qp-divider { background-color: #f2f0f0 !important; z-index: 15; flex: 0 0 auto; }
-.qp-divider:hover { background: rgba(66, 133, 244, 0.25); }
+.qp-divider { background-color: none !important; z-index: 15; flex: 0 0 auto; }
+/* .qp-divider:hover { background: rgba(71, 70, 70, 0.108); } */
 .qp-divider-v { width: 0.2rem; cursor: col-resize; align-self: stretch; }
 .qp-divider-h { height: 0.2rem; cursor: row-resize; }
 
@@ -175,8 +229,6 @@ body.qp-resizing iframe { pointer-events: none; }
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.98);
-  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .qp-single-mode .qp-slot.qp-active-slot {
   position: absolute;
@@ -190,15 +242,46 @@ body.qp-resizing iframe { pointer-events: none; }
 .qp-single-mode #qp-col-right:not(:has(.qp-active-slot)) { display: none; }
 .qp-single-mode #qp-col-left:not(:has(.qp-active-slot)) { display: none; }
 
+/* Hide the redundant panel header when maximized — the navbar carries the title. */
+.qp-single-mode .qp-active-slot .qp-header { display: none; }
+
+/* The active panel becomes seamless with the navbar (no double border/shadow). */
+.qp-single-mode .qp-active-slot .qp-panel {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Navbar styled as a clean toolbar in maximized mode. */
+.qp-navbar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 0rem 0.6rem;
+  margin-bottom: 0;
+  background: #f3f4f6;
+  border: 0.0625rem solid var(--c-1);
+  border-bottom: none;
+  border-radius: 0;
+}
+.qp-single-mode .qp-navbar { display: flex; }
+
+/* Give the navbar + panel a unified container feel. */
+.qp-single-mode .qp-grid {
+  border: 0.0625rem solid var(--c-1);
+  border-top: none;
+  background: #fff;
+}
+
 /* --- Drag & drop --- */
 .qp-drag-source { opacity: 0.35; }
 .qp-drop-target::after {
   content: "";
   position: absolute;
   inset: 2px;
-  border: 2px dashed #4285f4;
-  border-radius: 8px;
-  background: rgba(66, 133, 244, 0.08);
+  border: 2px dashed #636363cf;
+  border-radius: 4px;
+  background: rgba(143, 143, 143, 0.384);
   pointer-events: none;
   z-index: 5;
 }
@@ -207,8 +290,8 @@ body.qp-resizing iframe { pointer-events: none; }
   z-index: 9999;
   pointer-events: none;
   opacity: 0.9;
-  transform: rotate(1deg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  /* transform: rotate(-1deg); */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 body.qp-dragging { cursor: grabbing; user-select: none; }
 body.qp-dragging iframe { pointer-events: none; }
@@ -216,10 +299,13 @@ body.qp-dragging iframe { pointer-events: none; }
 
 .html-fill-container[data-value="Workspace"] {
   margin: 0 !important;
-  padding: 0.2rem !important;
-  /* border-right: 0.05rem solid var(--c-1) !important; */
+  padding-top: 0.2rem !important;
+  padding-left: 0.2rem !important;
+  padding-right: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
   border: none !important;
-  background-color: #f6f5f8 !important;
+  /* background-color: #f6f5f8 !important; */
+  background-color: #fff !important;
 }
 
 .main {
@@ -233,9 +319,169 @@ body.qp-dragging iframe { pointer-events: none; }
 
 .navbar {
   border-bottom: 1px solid var(--c-1) !important;
-  height: 2.3rem !important;
+  height: 2.25rem !important;
 }
 
 .sidebar {
   border-right: 1px solid var(--c-1) !important;
+}
+
+
+
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #d0d0d0; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #adadad; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 2. Main Navbar Container Tweaks */
+.navbar-default {
+  background-color: #f6f5f8 !important;
+  border-bottom: 1px solid #dee2e6 !important;
+  padding: 0 !important;
+  min-height: auto !important;
+}
+
+.navbar-default .container-fluid {
+  padding-left: 1rem;
+}
+
+/* 3. Remove Gaps and ensure layout */
+.navbar-nav {
+  margin: 0 !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+}
+
+/* 4. Individual Tab (Item) Borders */
+.navbar-default .nav-item {
+  border-right: 1px solid #dee2e6 !important;
+}
+
+.navbar-default .nav-item:first-child {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* 5. Nav Links Base Styling (Typography & Padding) */
+.navbar-default .nav-item .nav-link {
+  color: #495057 !important;
+  font-size: 0.965rem !important;         /* Locked font size */
+  font-weight: 600 !important;            /* Locked font weight */
+  padding: 0.4375rem 1.15rem !important;   /* bottom - top padding */
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+/* 6. Active State: Seamless merge with #f6f5f8 background */
+.navbar-default .nav-item .nav-link.active {
+  color: #212529 !important;
+  /* background-color: #f6f5f8 !important; */
+  background-color: #fff !important;
+  /* Visual overlap to hide the navbar's bottom border */
+  margin-bottom: -1px !important;
+  /* border-bottom: 1px solid #f6f5f8 !important; */
+  border-bottom: 1px solid #fff !important;
+  position: relative;
+  z-index: 2;
+}
+
+/* 7. Hover Consistency (Optional) */
+.navbar-default .nav-item .nav-link:hover:not(.active) {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+
+
+
+
+/* Persistent 5rem block when collapsed */
+.bslib-sidebar-layout.sidebar-collapsed {
+  grid-template-columns: 4rem 1fr !important;
+}
+
+.bslib-sidebar-layout.sidebar-collapsed > .sidebar {
+  width: 4rem !important;
+  max-width: 4rem !important;
+  display: block !important;
+  /* background-color: white !important; */
+  /* border-right: 1px solid var(--border); */
+  overflow: hidden;
+}
+.bslib-sidebar-layout.sidebar-collapsed > .sidebar {
+  border-right: 1px solid transparent;
+  border-image: linear-gradient(
+    to bottom,
+    transparent 2.25rem,
+    var(--border) 2.25rem
+  ) 1;
+}
+
+/* Position the toggle arrow at the top center */
+.bslib-sidebar-layout.sidebar-collapsed .collapse-toggle {
+  position: absolute !important;
+  left: 50% !important;
+  top: 1rem !important;
+  transform: translateX(-50%) !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1001 !important;
+}
+
+/* Hide other content in collapsed mode */
+.bslib-sidebar-layout.sidebar-collapsed > .sidebar > *:not(.collapse-toggle) {
+  display: none !important;
+}
+
+.sidebar {
+  background-color: #f6f5f8 !important;
+  border-right: 1px solid transparent;
+  border-image: linear-gradient(
+    to bottom,
+    transparent 2.25rem,
+    var(--border) 2.25rem
+  ) 1;
+}
+
+.bslib-sidebar-layout {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
 }

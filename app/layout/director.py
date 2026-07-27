@@ -47,8 +47,8 @@ def quad_layout(top_left, top_right, bottom_left, bottom_right):
         ui.div(
             ui.tags.button(
                 ui.HTML("&#8862;"),
-                " Grid view",
-                class_="qp-nav-back",
+                None,
+                class_="qp-nav-back qp-btn",
                 type="button",
                 title="Back to 4-panel view",
             ),
@@ -80,5 +80,5 @@ def quad_layout(top_left, top_right, bottom_left, bottom_right):
             class_="qp-grid",
             id="qp-container",
         ),
-        class_="qp-root",
+        class_="qp-root qp-grid-mode",
     )

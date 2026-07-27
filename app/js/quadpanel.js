@@ -27,6 +27,7 @@
       rowLeft: 0.5, // left column top-row share
       rowRight: 0.65, // right column top-row share
       maximized: null, // slot id string when in single-panel mode
+      collapsed: null, // saved collapse state while maximized
     };
 
     applyFractions(grid, state);
@@ -121,25 +122,32 @@
         const slot = collapseBtn.closest(".qp-slot");
         if (slot) toggleCollapse(slot);
       } else if (maxBtn) {
-        const slot = maxBtn.closest(".qp-slot");
-        if (slot) enterMaximized(root, grid, state, slot.id);
+        const panel = maxBtn.closest(".qp-panel");
+        if (panel) enterMaximized(root, grid, state, panel.id);
       }
     });
   }
 
   function toggleCollapse(slot) {
-    // Position within its column determines snap direction (top vs bottom).
+    applyCollapse(slot, !slot.classList.contains("qp-collapsed"));
+  }
+
+  function applyCollapse(slot, collapse) {
     const col = slot.closest(".qp-col");
     const slots = [...col.querySelectorAll(".qp-slot")];
     const isTop = slots.indexOf(slot) === 0;
-    slot.classList.toggle("qp-collapsed");
-    slot.classList.toggle("qp-collapsed-top", isTop);
-    slot.classList.toggle("qp-collapsed-bottom", !isTop);
-    // Let the sibling expand.
+
+    slot.classList.toggle("qp-collapsed", collapse);
+    slot.classList.toggle("qp-collapsed-top", collapse && isTop);
+    slot.classList.toggle("qp-collapsed-bottom", collapse && !isTop);
+
     col.classList.toggle(
       "qp-col-collapsed",
       col.querySelector(".qp-collapsed") !== null
     );
+
+    // Nudge Shiny/browser to (re)bind & size any outputs revealed on expand.
+    if (!collapse) nudgeShiny(slot);
   }
 
   /* ---------- Maximize -> single-panel navbar view ---------- */
@@ -148,19 +156,29 @@
     const links = root.querySelector("#qp-nav-links");
     const back = root.querySelector(".qp-nav-back");
 
-    // Build a link per slot.
-    grid.querySelectorAll(".qp-slot").forEach((slot) => {
+    // Desired navbar order (by panel id).
+    const navOrder = ["qp-source", "qp-env", "qp-output", "qp-console"];
+
+    // Collect panels, then sort by the desired order.
+    const panels = [...grid.querySelectorAll(".qp-slot .qp-panel")];
+    panels.sort((a, b) => {
+      const ia = navOrder.indexOf(a.id);
+      const ib = navOrder.indexOf(b.id);
+      return (ia === -1 ? Infinity : ia) - (ib === -1 ? Infinity : ib);
+    });
+
+    panels.forEach((panel) => {
       const title =
-        slot.querySelector(".qp-title")?.getAttribute("data-qp-title") ||
-        slot.querySelector(".qp-title")?.textContent ||
-        slot.id;
+        panel.querySelector(".qp-title")?.getAttribute("data-qp-title") ||
+        panel.querySelector(".qp-title")?.textContent ||
+        panel.id;
       const link = document.createElement("button");
       link.type = "button";
       link.className = "qp-nav-link";
       link.textContent = title;
-      link.dataset.slot = slot.id;
+      link.dataset.panel = panel.id;
       link.addEventListener("click", () =>
-        enterMaximized(root, grid, state, slot.id)
+        enterMaximized(root, grid, state, panel.id)
       );
       links.appendChild(link);
     });
@@ -168,27 +186,78 @@
     back.addEventListener("click", () => exitMaximized(root, grid, state));
   }
 
-  function enterMaximized(root, grid, state, slotId) {
-    state.maximized = slotId;
+  function enterMaximized(root, grid, state, panelId) {
+    // Find the slot that currently holds this panel.
+    const panel = grid.querySelector("#" + CSS.escape(panelId));
+    const slot = panel ? panel.closest(".qp-slot") : null;
+    if (!slot) return;
+
+    // Preserve the current collapse state so we can restore it on exit.
+    // Keyed by panel id (panels can be swapped between slots via drag & drop).
+    if (!state.maximized) {
+      state.collapsed = new Map();
+      grid.querySelectorAll(".qp-slot").forEach((s) => {
+        const p = s.querySelector(".qp-panel");
+        if (p) state.collapsed.set(p.id, s.classList.contains("qp-collapsed"));
+      });
+    }
+
+    state.maximized = panelId;
     root.classList.add("qp-single-mode");
+    root.classList.remove("qp-grid-mode");
 
     grid.querySelectorAll(".qp-slot").forEach((s) => {
-      s.classList.toggle("qp-active-slot", s.id === slotId);
+      s.classList.toggle("qp-active-slot", s === slot);
       // Clear collapse while maximized so full content shows.
       s.classList.remove("qp-collapsed", "qp-collapsed-top", "qp-collapsed-bottom");
     });
+    grid.querySelectorAll(".qp-col").forEach((c) =>
+      c.classList.remove("qp-col-collapsed")
+    );
 
     root.querySelectorAll(".qp-nav-link").forEach((l) =>
-      l.classList.toggle("qp-nav-active", l.dataset.slot === slotId)
+      l.classList.toggle("qp-nav-active", l.dataset.panel === panelId)
     );
+
+    // Nudge Shiny to bind & size any outputs revealed by maximizing.
+    nudgeShiny(slot);
   }
 
   function exitMaximized(root, grid, state) {
     state.maximized = null;
     root.classList.remove("qp-single-mode");
+    root.classList.add("qp-grid-mode");
     grid.querySelectorAll(".qp-slot").forEach((s) =>
       s.classList.remove("qp-active-slot")
     );
+
+    // Restore the collapse state captured when entering maximized mode.
+    if (state.collapsed) {
+      grid.querySelectorAll(".qp-slot").forEach((s) => {
+        const p = s.querySelector(".qp-panel");
+        if (p && state.collapsed.get(p.id)) applyCollapse(s, true);
+        else applyCollapse(s, false);
+      });
+      grid.querySelectorAll(".qp-col").forEach((c) =>
+        c.classList.toggle(
+          "qp-col-collapsed",
+          c.querySelector(".qp-collapsed") !== null
+        )
+      );
+      state.collapsed = null;
+    }
+
+    // Re-bind/size all panels when returning to the grid.
+    nudgeShiny(grid);
+  }
+
+  function nudgeShiny(scope) {
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+      if (window.Shiny && Shiny.bindAll) {
+        try { Shiny.bindAll(scope); } catch (e) {}
+      }
+    });
   }
 
   /* ---------- Drag & drop swapping ---------- */
