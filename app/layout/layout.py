@@ -1,6 +1,8 @@
 from shiny import ui
 
 from .director import panel, quad_layout
+from .pages.menu import menu_content
+
 
 source_panel = panel("qp-source", "Dashboard", ui.output_ui("dashboard_content"))
 env_panel = panel("qp-env", "Filters", ui.output_ui("filters_page"))
@@ -15,7 +17,7 @@ app_ui = ui.page_sidebar(
         width="15rem",
     ),
     ui.navset_bar(
-        ui.nav_panel("Menu", ui.output_ui("menu_content")),
+        ui.nav_panel("Menu", menu_content),
         ui.nav_panel(
             "Workspace",
             quad_layout(source_panel, env_panel, console_panel, output_panel),
@@ -34,6 +36,6 @@ app_ui = ui.page_sidebar(
             )
         ),
         id="main_nav",
-        selected="Workspace",
+        selected="Menu",
     )
 )

@@ -4,15 +4,19 @@
 }
 
 
+
 body {
-  background-image: radial-gradient(
-    circle at top left,
-    #888888 0%,
-    #626262 100%
-  ) !important;
+  background-color: #f6f5f8 !important;
+}
+
+body {
+  background-color: #fff !important;
 }
 
 
+/* .nav.navbar-nav {
+  background-color: #f6f5f8 !important;
+} */
 a.nav-link:hover,
 a.nav-link.active,
 a.nav-link {
@@ -44,8 +48,8 @@ bslib-input-dark-mode {
 
 
 .qp-root {
-  height: calc(100vh - 3.65rem);
-  padding: 0;
+  height: calc(100vh - 2.65rem);
+  padding: 0rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -151,12 +155,15 @@ bslib-input-dark-mode {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* border: 0.0625rem solid var(--c-1); */
-  border: none;
-  border-radius: 0.375rem;
-  background: #f4f4f4;
+  border: 0.0625rem solid var(--c-1);
+  border-radius: 0;
+  background: #ffffff;
   overflow: hidden;
 }
+
+/* .qp-grid-mode .qp-slot {
+  box-shadow: 0 0 0.125rem rgba(93, 92, 92, 0.212);
+} */
 
 .qp-header {
   display: flex;
@@ -196,33 +203,10 @@ bslib-input-dark-mode {
 
 
 /* --- Dividers --- */
-.qp-divider { background-color: transparent !important; z-index: 15; flex: 0 0 auto; }
-.qp-divider-v { width: 0.4rem; cursor: col-resize; align-self: stretch; }
-.qp-divider-h { height: 0.4rem; cursor: row-resize; }
-.qp-divider-v:hover { 
-  background-image: linear-gradient(
-    to right, 
-    transparent 0rem, 
-    transparent 0.16874rem,
-    #1a1a1a 0.16875rem,
-    #1a1a1a 0.2rem,
-    #1a1a1a 0.23125rem,
-    transparent 0.16876rem,
-    transparent 0.4rem
-  );
-}
-.qp-divider-h:hover { 
-  background-image: linear-gradient(
-    to bottom, 
-    transparent 0rem, 
-    transparent 0.16874rem,
-    #1a1a1a 0.16875rem,
-    #1a1a1a 0.2rem,
-    #1a1a1a 0.23125rem,
-    transparent 0.16876rem,
-    transparent 0.4rem
-  );
-}
+.qp-divider { background-color: none !important; z-index: 15; flex: 0 0 auto; }
+/* .qp-divider:hover { background: rgba(71, 70, 70, 0.108); } */
+.qp-divider-v { width: 0.2rem; cursor: col-resize; align-self: stretch; }
+.qp-divider-h { height: 0.2rem; cursor: row-resize; }
 
 
 body.qp-resizing { cursor: grabbing; user-select: none; }
@@ -305,10 +289,8 @@ body.qp-resizing iframe { pointer-events: none; }
   position: fixed;
   z-index: 9999;
   pointer-events: none;
-  /* opacity on the element itself breaks backdrop-filter — remove it */
-    -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-  background: #ffffffdd;
+  opacity: 0.9;
+  /* transform: rotate(-1deg); */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 body.qp-dragging { cursor: grabbing; user-select: none; }
@@ -317,11 +299,13 @@ body.qp-dragging iframe { pointer-events: none; }
 
 .html-fill-container[data-value="Workspace"] {
   margin: 0 !important;
-  padding-top: 0.4rem !important;
-  padding-left: 0.4rem !important;
-  padding-right: 0.4rem !important;
-  padding-bottom: 0.4rem !important;
+  padding-top: 0.2rem !important;
+  padding-left: 0.2rem !important;
+  padding-right: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
   border: none !important;
+  /* background-color: #f6f5f8 !important; */
+  background-color: #fff !important;
 }
 
 .main {
@@ -335,7 +319,7 @@ body.qp-dragging iframe { pointer-events: none; }
 
 .navbar {
   border-bottom: 1px solid var(--c-1) !important;
-  height: 2.85rem !important;
+  height: 2.25rem !important;
 }
 
 .sidebar {
@@ -369,6 +353,80 @@ body.qp-dragging iframe { pointer-events: none; }
 
 
 
+
+
+
+
+
+
+
+
+/* 2. Main Navbar Container Tweaks */
+.navbar-default {
+  background-color: #f6f5f8 !important;
+  border-bottom: 1px solid #dee2e6 !important;
+  padding: 0 !important;
+  min-height: auto !important;
+}
+
+.navbar-default .container-fluid {
+  padding-left: 0 !important;
+}
+
+/* 3. Remove Gaps and ensure layout */
+.navbar-nav {
+  margin: 0 !important;
+  gap: 0 !important;
+  column-gap: 0 !important;
+}
+
+/* 4. Individual Tab (Item) Borders */
+.navbar-default .nav-item {
+  border-right: 1px solid #dee2e6 !important;
+}
+
+/* .navbar-default .nav-item:first-child {
+  border-left: 1px solid #dee2e6 !important;
+} */
+
+/* 5. Nav Links Base Styling (Typography & Padding) */
+.navbar-default .nav-item .nav-link {
+  color: #495057 !important;
+  font-size: 0.965rem !important;         /* Locked font size */
+  font-weight: 600 !important;            /* Locked font weight */
+  padding: 0.4375rem 1.15rem !important;   /* bottom - top padding */
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+/* 6. Active State: Seamless merge with #f6f5f8 background */
+.navbar-default .nav-item .nav-link.active {
+  color: #212529 !important;
+  /* background-color: #f6f5f8 !important; */
+  background-color: #fff !important;
+  /* Visual overlap to hide the navbar's bottom border */
+  margin-bottom: -1px !important;
+  /* border-bottom: 1px solid #f6f5f8 !important; */
+  border-bottom: 1px solid #fff !important;
+  position: relative;
+  z-index: 2;
+}
+
+/* 7. Hover Consistency (Optional) */
+.navbar-default .nav-item .nav-link:hover:not(.active) {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+
+
+
+
 /* Persistent 5rem block when collapsed */
 .bslib-sidebar-layout.sidebar-collapsed {
   grid-template-columns: 4rem 1fr !important;
@@ -384,6 +442,11 @@ body.qp-dragging iframe { pointer-events: none; }
 }
 .bslib-sidebar-layout.sidebar-collapsed > .sidebar {
   border-right: 1px solid var(--border);
+  /* border-image: linear-gradient(
+    to bottom,
+    transparent 2.25rem,
+    var(--border) 2.25rem
+  ) 1; */
 }
 
 /* Position the toggle arrow at the top center */
@@ -409,7 +472,7 @@ body.qp-dragging iframe { pointer-events: none; }
 }
 
 .sidebar {
-  background-color: #d5d5d5 !important;
+  background-color: #f6f5f8 !important;
   border-right: 1px solid var(--border);
 }
 
@@ -418,52 +481,42 @@ body.qp-dragging iframe { pointer-events: none; }
   animation-duration: 0s !important;
 }
 
-
-
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: 45% 55%;
-  height: calc(100vh - 2.85rem);
-  width: 100%;
-  padding-bottom: 0.4rem;
-}
-
-.static-panel {
+/* --- Static Menu 5-panel layout --- */
+.ms-grid {
+  height: calc(100vh - 2.65rem);
   display: flex;
   flex-direction: column;
-  padding: 0.4rem;
-  margin-top: 0.4rem;
-  margin-left: 0.4rem;
-  border: none;
-  border-radius: 0.375rem;
-  background: #f4f4f4;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  box-sizing: border-box;
+  background: #fff;
+}
+.ms-row {
+  display: flex;
+  gap: 0.2rem;
+  min-height: 0;
+}
+.ms-row-top { flex: 0.45 1 0; }
+.ms-row-bottom { flex: 0.55 1 0; }
+
+.ms-slot {
+  min-width: 0;
+  min-height: 0;
+}
+/* Top row: wide left, then two smaller panels. */
+.ms-row-top > .ms-slot:nth-child(1) { flex: 1.6 1 0; }
+.ms-row-top > .ms-slot:nth-child(2) { flex: 1 1 0; }
+.ms-row-top > .ms-slot:nth-child(3) { flex: 1 1 0; }
+/* Bottom row: two equal panels. */
+.ms-row-bottom > .ms-slot { flex: 1 1 0; }
+
+/* Reuse the workspace panel look. */
+.ms-slot .qp-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 0.0625rem solid var(--c-1);
+  border-radius: 0;
+  background: #ffffff;
   overflow: hidden;
-}
-
-.html-fill-container[data-value="Menu"] {
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-}
-
-
-.col-b {
-  display: grid;
-  grid-template-rows: 50% 50%;
-  height: 100%;
-  width: 100%;
-  padding-right: 0.4rem;
-}
-
-.row-a1 {
-  display: grid;
-  grid-template-columns: 40% 60%;
-}
-
-.col-a1a {
-  display: grid;
-  grid-template-rows: 50% 50%;
-  height: 100%;
-  width: 100%;
 }

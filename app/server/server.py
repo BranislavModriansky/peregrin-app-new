@@ -29,8 +29,6 @@ def server(input, output, session):
     @render.ui
     def filters_page():
         return ui.div(
-            ui.h3("Filters Page"),
-            ui.p("This is the filters page content."),
             ui.output_plot("histogram_plot"),
         )
 
@@ -49,7 +47,6 @@ def server(input, output, session):
     @render.ui
     def dashboard_content():
         return ui.div(
-            ui.p("This is the dashboard content."),
             ui.output_data_frame("data_table"),
         )
 
@@ -75,7 +72,6 @@ def server(input, output, session):
         col_min = float(df["Column 1"].min())
         col_max = float(df["Column 1"].max())
         return ui.div(
-            ui.p("This is the explorer content."),
             ui.input_slider(
                 "value_filter",
                 "Filter Column 1 range",
