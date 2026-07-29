@@ -37,5 +37,9 @@ app_ui = ui.page_sidebar(
         ),
         id="main_nav",
         selected="Menu",
-    )
+    ),
+    ui.head_content(
+        ui.include_css("app/styles/input_manager.css"),
+        ui.include_js("app/js/input_manager.js"),
+    ),
 )

@@ -3,6 +3,8 @@ from shiny import ui
 menu_content = ui.div(
     ui.div(
         "file input",
+        ui.div(""),
+        ui.div(class_="input-manager"),
         class_="col-a static-panel input-panel",
     ),
     ui.div(
