@@ -147,16 +147,37 @@ body.im-modal-open { overflow: hidden; }
 /* Output port (drag to connect a child) — top-most for reliable grabbing */
 .im-port-out {
   position: absolute;
-  right: -7px; top: 50%;
+  right: -12px; top: 50%;
   transform: translateY(-50%);
-  width: 12px; height: 12px;
+  width: 20px; height: 20px;
   border-radius: 50%;
-  background: #6c8cff;
-  border: 2px solid #fff;
-  cursor: crosshair;
+  background: #fff;
+  border: 2px solid #6c8cff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   z-index: 3;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: background 0.15s, transform 0.15s;
 }
-.im-port-out:hover { background: #4a6bff; }
+.im-port-out:hover { background: #eef1ff; transform: translateY(-50%) scale(1.1); }
+.im-port-plus {
+  font-size: 15px; font-weight: 600;
+  line-height: 1; color: #6c8cff;
+  pointer-events: none;
+}
+
+/* SVG layer: links ignore clicks, but handles are interactive. */
+.im-links { pointer-events: none; }
+.im-link-handle {
+  pointer-events: all;
+  fill: #fff;
+  stroke: #6c8cff;
+  stroke-width: 2;
+  cursor: grab;
+}
+.im-link-handle:hover { fill: #eef1ff; }
 
 /* Feedback */
 .im-drop-hover .im-circle,

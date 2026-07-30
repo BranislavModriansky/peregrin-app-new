@@ -71,6 +71,7 @@
 
     wireCanvas(container, state);
     wirePan(state);
+    wireHandleDrag(state);
     applyPan(state);
     redrawLinks(state);
   }
@@ -144,7 +145,9 @@
         ${isInput ? '<span class="im-plus">+</span>' : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}</div>
         <div class="im-node-files"></div>
-        <div class="im-port im-port-out" title="Drag to connect a child"></div>
+        <div class="im-port im-port-out" title="Add a child element">
+          <span class="im-port-plus">+</span>
+        </div>
       </div>
     `;
 
@@ -189,7 +192,7 @@
     const canvas = state.canvas;
     let activeNode = null;
 
-    // Suppress the native menu across the whole manager.
+    // Suppress the native menu across the whole manager (no node creation).
     container.addEventListener("contextmenu", (e) => e.preventDefault());
 
     // Click shape -> open file dialog.
@@ -211,30 +214,10 @@
       activeNode = null;
     });
 
-    // Right-click a node -> add a child of the next level.
-    canvas.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const nodeEl = e.target.closest(".im-node");
-
-      // Right-click on empty canvas -> create a root-level "set".
-      if (!nodeEl) {
-        const p = viewportPoint(state, e.clientX, e.clientY);
-        addNode(state, "set", p.x, p.y, null);
-        redrawLinks(state);
-        return;
-      }
-
-      const parent = findNode(state, nodeEl.dataset.id);
-      const childType = childLevelOf(parent.type);
-      if (!childType) return; // subgroup is the last container level
-      addNode(state, childType, parent.x + 160, parent.y + 40, parent.id);
-      redrawLinks(state);
-    });
+    // (Right-click node creation removed.)
 
     wireNodeDrag(state);
-    wirePortDrag(state);
+    wirePortClick(state);
     wireFileDrop(state);
 
     window.addEventListener("resize", () => redrawLinks(state));
@@ -387,6 +370,62 @@
     return null;
   }
 
+  /* ---------- Cable handle dragging (re-plug into a new parent) ---------- */
+
+  function wireHandleDrag(state) {
+    const svg = state.svg;
+
+    svg.addEventListener("mousedown", (e) => {
+      const handle = e.target.closest(".im-link-handle");
+      if (!handle) return;
+      e.stopPropagation();
+      e.preventDefault();
+
+      const child = findNode(state, handle.dataset.childId);
+      if (!child) return;
+
+      const svgNS = "http://www.w3.org/2000/svg";
+      const temp = document.createElementNS(svgNS, "path");
+      temp.classList.add("im-link", "im-link-temp");
+      state.svg.appendChild(temp);
+
+      const move = (ev) => {
+        const p = viewportPoint(state, ev.clientX, ev.clientY);
+        const to = inPoint(state, child);
+        temp.setAttribute("d", bezier(p.x, p.y, to.x, to.y));
+        highlightPlug(state, ev, child);
+      };
+      const up = (ev) => {
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        temp.remove();
+        clearDropHighlight(state);
+
+        const targetEl = elementNodeAt(ev.clientX, ev.clientY);
+        if (targetEl) {
+          const newParent = findNode(state, targetEl.dataset.id);
+          if (newParent && newParent.id !== child.id &&
+              canParent(newParent.type, child.type)) {
+            child.parentId = newParent.id;
+          }
+        }
+        redrawLinks(state);
+      };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    });
+  }
+
+  function highlightPlug(state, ev, child) {
+    clearDropHighlight(state);
+    const targetEl = elementNodeAt(ev.clientX, ev.clientY);
+    if (!targetEl) return;
+    const parent = findNode(state, targetEl.dataset.id);
+    if (parent && canParent(parent.type, child.type) && parent.id !== child.id) {
+      targetEl.classList.add("im-plug-target");
+    }
+  }
+
   /* ---------- Curved connectors ---------- */
 
   function canvasPoint(canvas, clientX, clientY) {
@@ -435,7 +474,8 @@
     svg.setAttribute("height", vr.height);
     svg.setAttribute("viewBox", `0 0 ${vr.width} ${vr.height}`);
 
-    svg.querySelectorAll(".im-link:not(.im-link-temp)").forEach((p) => p.remove());
+    svg.querySelectorAll(".im-link:not(.im-link-temp), .im-link-handle")
+      .forEach((p) => p.remove());
 
     const svgNS = "http://www.w3.org/2000/svg";
     state.nodes.forEach((node) => {
@@ -444,11 +484,73 @@
       if (!parent) return;
       const from = portPoint(state, parent);
       const to = inPoint(state, node);
+
       const path = document.createElementNS(svgNS, "path");
       path.classList.add("im-link");
       path.setAttribute("d", bezier(from.x, from.y, to.x, to.y));
       svg.appendChild(path);
+
+      // Re-plug handle: placed ON the bezier curve, near the parent.
+      const h = handlePoint(from, to);
+      const handle = document.createElementNS(svgNS, "circle");
+      handle.classList.add("im-link-handle");
+      handle.setAttribute("cx", h.x);
+      handle.setAttribute("cy", h.y);
+      handle.setAttribute("r", 6);
+      handle.dataset.childId = node.id;
+      svg.appendChild(handle);
     });
+  }
+
+  // Cubic bezier control points (must match bezier()).
+  function bezierPoints(x1, y1, x2, y2) {
+    const dx = Math.max(40, Math.abs(x2 - x1) * 0.5);
+    return {
+      p0: { x: x1, y: y1 },
+      p1: { x: x1 + dx, y: y1 },
+      p2: { x: x2 - dx, y: y2 },
+      p3: { x: x2, y: y2 },
+    };
+  }
+
+  // Evaluate the cubic bezier at parameter t (0..1).
+  function bezierAt(cp, t) {
+    const u = 1 - t;
+    const a = u * u * u;
+    const b = 3 * u * u * t;
+    const c = 3 * u * t * t;
+    const d = t * t * t;
+    return {
+      x: a * cp.p0.x + b * cp.p1.x + c * cp.p2.x + d * cp.p3.x,
+      y: a * cp.p0.y + b * cp.p1.y + c * cp.p2.y + d * cp.p3.y,
+    };
+  }
+
+  // A point ON the cable a fixed arc-distance from the parent.
+  function handlePoint(from, to) {
+    const cp = bezierPoints(from.x, from.y, to.x, to.y);
+    const targetDist = 46; // distance along the curve from the parent
+
+    // Walk the curve accumulating length until we reach targetDist.
+    const steps = 40;
+    let prev = bezierAt(cp, 0);
+    let acc = 0;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const pt = bezierAt(cp, t);
+      const seg = Math.hypot(pt.x - prev.x, pt.y - prev.y);
+      if (acc + seg >= targetDist) {
+        const f = (targetDist - acc) / seg;
+        return {
+          x: prev.x + (pt.x - prev.x) * f,
+          y: prev.y + (pt.y - prev.y) * f,
+        };
+      }
+      acc += seg;
+      prev = pt;
+    }
+    // Fallback: near the end (short cables).
+    return bezierAt(cp, 0.5);
   }
 
   /* ---------- Native file drag & drop onto nodes ---------- */
@@ -531,4 +633,42 @@
       document.addEventListener("mouseup", up);
     });
   }
+
+  /* ---------- Port click (create a child) ---------- */
+
+  function wirePortClick(state) {
+    const canvas = state.canvas;
+
+    canvas.addEventListener("mousedown", (e) => {
+      const port = e.target.closest(".im-port-out");
+      if (!port) return;
+      // Stop node-drag / pan from firing on the port.
+      e.stopPropagation();
+    });
+
+    canvas.addEventListener("click", (e) => {
+      const port = e.target.closest(".im-port-out");
+      if (!port) return;
+      e.stopPropagation();
+
+      const parentEl = port.closest(".im-node");
+      const parent = findNode(state, parentEl.dataset.id);
+      const childType = childLevelOf(parent.type);
+      if (!childType) return; // terminal level
+
+      addNode(state, childType, parent.x + 180, parent.y + 60, parent.id);
+      redrawLinks(state);
+    });
+  }
+
+  // Right-click a node -> show a small remove button (not the input).
+  container.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    closeContextMenu();
+    const nodeEl = e.target.closest(".im-node");
+    if (!nodeEl) return;
+    const node = findNode(state, nodeEl.dataset.id);
+    if (!node || node.type === "input") return;
+    showRemoveMenu(state, node, e.clientX, e.clientY);
+  });
 })();
