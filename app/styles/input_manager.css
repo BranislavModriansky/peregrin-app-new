@@ -190,3 +190,29 @@ body.im-modal-open { overflow: hidden; }
   border-color: #6c8cff;
   box-shadow: 0 0 0 3px rgba(108, 140, 255, 0.3);
 }
+
+/* Remove (X) button — top-right corner of a node */
+.im-remove {
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 18px; height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: #ff5a5a;
+  color: #fff;
+  font-size: 13px; line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, transform 0.12s;
+  z-index: 4;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.im-node:hover .im-remove { opacity: 1; }
+.im-remove:hover { background: #e23b3b; transform: scale(1.1); }
+.im-node.im-locked .im-remove { display: none; }
+
+/* Subgroup is terminal — no child can be added, so hide the ⊕ port. */
+.im-subgroup .im-port-out { display: none; }

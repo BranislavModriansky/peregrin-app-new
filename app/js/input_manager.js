@@ -36,6 +36,7 @@
       fileInput: null,
       panX: 0,
       panY: 0,
+      zoom: 1,
     };
 
     buildToolbar(container, state);
@@ -67,7 +68,12 @@
     state.fileInput = fileInput;
 
     // Root input node.
-    addNode(state, "input", 40, 40, null);
+    const input = addNode(state, "input", 40, 40, null);
+
+    // Default set element, connected to the input, and non-removable.
+    const defaultSet = addNode(state, "set", 260, 60, input.id);
+    defaultSet.locked = true;
+    defaultSet.el.classList.add("im-locked");
 
     wireCanvas(container, state);
     wirePan(state);
@@ -89,6 +95,22 @@
     homeBtn.textContent = "⌂";
     homeBtn.addEventListener("click", () => resetPan(state));
     bar.appendChild(homeBtn);
+
+    const zoomInBtn = document.createElement("button");
+    zoomInBtn.type = "button";
+    zoomInBtn.className = "im-btn im-zoom-in";
+    zoomInBtn.title = "Zoom in";
+    zoomInBtn.textContent = "+";
+    zoomInBtn.addEventListener("click", () => zoomBy(state, 1.2));
+    bar.appendChild(zoomInBtn);
+
+    const zoomOutBtn = document.createElement("button");
+    zoomOutBtn.type = "button";
+    zoomOutBtn.className = "im-btn im-zoom-out";
+    zoomOutBtn.title = "Zoom out";
+    zoomOutBtn.textContent = "−";
+    zoomOutBtn.addEventListener("click", () => zoomBy(state, 1 / 1.2));
+    bar.appendChild(zoomOutBtn);
 
     const fullBtn = document.createElement("button");
     fullBtn.type = "button";
@@ -113,6 +135,7 @@
   function resetPan(state) {
     state.panX = 0;
     state.panY = 0;
+    state.zoom = 1;
     applyPan(state);
     redrawLinks(state);
   }
@@ -142,6 +165,7 @@
 
     el.innerHTML = `
       <div class="${shapeClass}" title="Click or drop files to import">
+        ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
         ${isInput ? '<span class="im-plus">+</span>' : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}</div>
         <div class="im-node-files"></div>
@@ -186,6 +210,34 @@
     return state.nodes.find((n) => n.id === id) || null;
   }
 
+  function removeNode(state, node) {
+    if (node.type === "input") return; // never remove the root input
+    if (node.locked) return;           // default set is protected
+
+    // Collect the node and all its descendants.
+    const toRemove = new Set([node.id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      state.nodes.forEach((n) => {
+        if (n.parentId && toRemove.has(n.parentId) && !toRemove.has(n.id)) {
+          toRemove.add(n.id);
+          changed = true;
+        }
+      });
+    }
+
+    state.nodes = state.nodes.filter((n) => {
+      if (toRemove.has(n.id)) {
+        n.el.remove();
+        return false;
+      }
+      return true;
+    });
+
+    redrawLinks(state);
+  }
+
   /* ---------- Canvas wiring ---------- */
 
   function wireCanvas(container, state) {
@@ -195,15 +247,28 @@
     // Suppress the native menu across the whole manager (no node creation).
     container.addEventListener("contextmenu", (e) => e.preventDefault());
 
+    // Remove (X) button.
+    canvas.addEventListener("click", (e) => {
+      const x = e.target.closest(".im-remove");
+      if (!x) return;
+      e.stopPropagation();
+      const nodeEl = x.closest(".im-node");
+      const node = findNode(state, nodeEl.dataset.id);
+      if (node) removeNode(state, node);
+    });
+
     // Click shape -> open file dialog.
     canvas.addEventListener("click", (e) => {
+      if (e.target.closest(".im-remove")) return;
       if (e.target.closest(".im-node-name")) return;
       if (e.target.closest(".im-port")) return;
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       if (canvas.dataset.justDragged === "1") { canvas.dataset.justDragged = ""; return; }
       if (e.target.closest(".im-circle") || e.target.closest(".im-square")) {
-        activeNode = findNode(state, nodeEl.dataset.id);
+        const node = findNode(state, nodeEl.dataset.id);
+        if (node.type === "input") return; // input circle can't hold files
+        activeNode = node;
         state.fileInput.value = "";
         state.fileInput.click();
       }
@@ -262,14 +327,16 @@
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
 
+      e.stopPropagation(); // prevent pan from also starting
+
       const node = findNode(state, nodeEl.dataset.id);
       const startX = e.clientX, startY = e.clientY;
       const origX = node.x, origY = node.y;
       let moved = false;
 
       const move = (ev) => {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
+        const dx = (ev.clientX - startX) / state.zoom;
+        const dy = (ev.clientY - startY) / state.zoom;
         if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
         moved = true;
         nodeEl.classList.add("im-node-dragging");
@@ -336,11 +403,6 @@
           }
           return;
         }
-
-        // Dropped on empty space -> create a new child there.
-        const p = viewportPoint(state, ev.clientX, ev.clientY);
-        addNode(state, childType, p.x - 20, p.y - 20, parent.id);
-        redrawLinks(state);
       };
       document.addEventListener("mousemove", move);
       document.addEventListener("mouseup", up);
@@ -436,7 +498,10 @@
   // Point in the viewport's (untranslated) coordinate space.
   function viewportPoint(state, clientX, clientY) {
     const r = state.viewport.getBoundingClientRect();
-    return { x: clientX - r.left, y: clientY - r.top };
+    return {
+      x: (clientX - r.left) / state.zoom,
+      y: (clientY - r.top) / state.zoom,
+    };
   }
 
   function portPoint(state, node) {
@@ -444,8 +509,8 @@
     const portEl = node.el.querySelector(".im-port-out");
     const rect = portEl.getBoundingClientRect();
     return {
-      x: rect.left - vr.left + rect.width / 2,
-      y: rect.top - vr.top + rect.height / 2,
+      x: (rect.left - vr.left + rect.width / 2) / state.zoom,
+      y: (rect.top - vr.top + rect.height / 2) / state.zoom,
     };
   }
 
@@ -454,8 +519,8 @@
     const shape = node.el.querySelector(".im-circle, .im-square");
     const rect = shape.getBoundingClientRect();
     return {
-      x: rect.left - vr.left,
-      y: rect.top - vr.top + rect.height / 2,
+      x: (rect.left - vr.left) / state.zoom,
+      y: (rect.top - vr.top + rect.height / 2) / state.zoom,
     };
   }
 
@@ -470,9 +535,13 @@
   function redrawLinks(state) {
     const svg = state.svg;
     const vr = state.viewport.getBoundingClientRect();
-    svg.setAttribute("width", vr.width);
-    svg.setAttribute("height", vr.height);
-    svg.setAttribute("viewBox", `0 0 ${vr.width} ${vr.height}`);
+    // Viewport is scaled; use its UNSCALED size so the SVG's coordinate
+    // system matches the unscaled node/link coordinates.
+    const w = vr.width / state.zoom;
+    const h = vr.height / state.zoom;
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
 
     svg.querySelectorAll(".im-link:not(.im-link-temp), .im-link-handle")
       .forEach((p) => p.remove());
@@ -575,7 +644,7 @@
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       const node = findNode(state, nodeEl.dataset.id);
-      if (node && e.dataTransfer.files.length) {
+      if (node && node.type !== "input" && e.dataTransfer.files.length) {
         addFiles(state, node, e.dataTransfer.files);
       }
     });
@@ -585,15 +654,30 @@
 
   function applyPan(state) {
     state.viewport.style.transform =
-      `translate(${state.panX}px, ${state.panY}px)`;
-    // Move the grid pattern with the pan (grid lives on the canvas).
+      `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+    // Move + scale the grid pattern with the pan/zoom.
+    const size = 18 * state.zoom;
+    state.canvas.style.backgroundSize = `${size}px ${size}px`;
     state.canvas.style.backgroundPosition =
       `${state.panX}px ${state.panY}px`;
   }
 
-  function resetPan(state) {
-    state.panX = 0;
-    state.panY = 0;
+  const clampZoom = (z) => Math.min(2.5, Math.max(0.3, z));
+
+  function zoomBy(state, factor) {
+    // Zoom toward the canvas center.
+    const r = state.canvas.getBoundingClientRect();
+    zoomAt(state, factor, r.width / 2, r.height / 2);
+  }
+
+  // Zoom keeping the point (cx, cy) in canvas-space anchored under the cursor.
+  function zoomAt(state, factor, cx, cy) {
+    const newZoom = clampZoom(state.zoom * factor);
+    const ratio = newZoom / state.zoom;
+    if (ratio === 1) return;
+    state.panX = cx - (cx - state.panX) * ratio;
+    state.panY = cy - (cy - state.panY) * ratio;
+    state.zoom = newZoom;
     applyPan(state);
     redrawLinks(state);
   }
@@ -601,9 +685,15 @@
   function wirePan(state) {
     const canvas = state.canvas;
 
-    // Touchpad / wheel scrolling pans the canvas.
+    // Touchpad / wheel: Ctrl = zoom, otherwise pan.
     canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
+      if (e.ctrlKey) {
+        const p = canvasPoint(canvas, e.clientX, e.clientY);
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+        zoomAt(state, factor, p.x, p.y);
+        return;
+      }
       state.panX -= e.deltaX;
       state.panY -= e.deltaY;
       applyPan(state);
@@ -613,7 +703,11 @@
     // Drag empty space to pan.
     canvas.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return;
-      if (e.target.closest(".im-node")) return; // node/port drags handled elsewhere
+      if (e.target.closest(".im-node")) return;
+      if (e.target.closest(".im-port")) return;
+      if (e.target.closest(".im-link-handle")) return;
+      if (e.target.closest(".im-remove")) return;
+
       const startX = e.clientX, startY = e.clientY;
       const origX = state.panX, origY = state.panY;
       canvas.classList.add("im-panning");
@@ -639,11 +733,9 @@
   function wirePortClick(state) {
     const canvas = state.canvas;
 
+    // Stop node-drag / pan from starting on the port.
     canvas.addEventListener("mousedown", (e) => {
-      const port = e.target.closest(".im-port-out");
-      if (!port) return;
-      // Stop node-drag / pan from firing on the port.
-      e.stopPropagation();
+      if (e.target.closest(".im-port-out")) e.stopPropagation();
     });
 
     canvas.addEventListener("click", (e) => {
@@ -660,15 +752,4 @@
       redrawLinks(state);
     });
   }
-
-  // Right-click a node -> show a small remove button (not the input).
-  container.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    closeContextMenu();
-    const nodeEl = e.target.closest(".im-node");
-    if (!nodeEl) return;
-    const node = findNode(state, nodeEl.dataset.id);
-    if (!node || node.type === "input") return;
-    showRemoveMenu(state, node, e.clientX, e.clientY);
-  });
 })();
