@@ -20,7 +20,7 @@ app_ui = ui.page_sidebar(
         open='closed',
         width="16rem",
     ),
-    ui.input_action_button("theme_toggle", "T", class_="theme-toggle"),
+    ui.input_action_button("theme_toggle", "◑", class_="theme-toggle"),
     ui.navset_bar(
         ui.nav_panel("Menu", menu_content),
         ui.nav_panel(
@@ -30,7 +30,7 @@ app_ui = ui.page_sidebar(
         # Full-page views of each panel
         ui.nav_panel("Clustering", ui.output_ui("clustering_content")),
         ui.nav_spacer(),
-        # ui.nav_control(ui.input_dark_mode(id="lightmode")),
+        ui.nav_control(ui.input_dark_mode(id="lightmode")),
         title=ui.tags.span(
             ui.a(
                 "Peregrin",
@@ -44,7 +44,7 @@ app_ui = ui.page_sidebar(
         selected="Menu",
     ),
     ui.head_content(
-        ui.include_css(path_to_css / "dark_high_contrast.css"),
+        ui.include_css(path_to_css / "light_low_contrast.css"),
         ui.output_ui("dynamic_theme", style="overflow: hidden; height: 0; width: 0; position: absolute; padding: 0"),
         # ui.tags.script(src="/js/input_manager.js"),
         # ui.tags.script(src="/js/quadpanel.js"),

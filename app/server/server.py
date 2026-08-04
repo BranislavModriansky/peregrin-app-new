@@ -9,10 +9,8 @@ path_to_css = Path(__file__).parents[1] / "styles"
 def server(input, output, session):
 
     themes = [
-        "light_low_contrast.css", 
-        "light_high_contrast.css",
-        # "dark_low_contrast.css",
-        "dark_high_contrast.css"
+        "low_contrast.css", 
+        "high_contrast.css",
     ]
 
     count = reactive.Value(0)
@@ -30,8 +28,13 @@ def server(input, output, session):
         @output(id="dynamic_theme")
         @render.ui
         def dynamic_theme():
-            css_text = (path_to_css / themes[count.get()]).read_text()
-            return ui.tags.style(css_text)
+            if input.lightmode() == 'dark':
+                theme = "dark_" + themes[count.get()]
+            else:
+                theme = "light_" + themes[count.get()]
+            # css_text = (path_to_css / theme).read_text()
+            # return ui.tags.style(css_text)
+            return ui.include_css(path_to_css / theme, method="inline")
     
 
     def _dummy_data_for_gist():

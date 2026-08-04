@@ -10,10 +10,6 @@
   --border4: #e0e0e0;
 }
 
-* {
-  color: white !important;
-}
-
 body {
   background-color: var(--c-0) !important;
 }
