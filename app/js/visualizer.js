@@ -11,7 +11,7 @@
     swirl: 0.000045,         // slow global rotation
     breathe: 0.00007,        // ring "breathing" speed
     color: [165, 180, 205],  // soft cool tone
-    maxAlpha: 0.2,         // per-grain opacity — keep it faint
+    maxAlpha: 0.2,         // per-grain opacity — keep it faint.
   };
 
   // --- Canvas setup ----------------------------------------------------------
