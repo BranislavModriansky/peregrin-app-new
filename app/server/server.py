@@ -2,10 +2,37 @@ from shiny import ui, reactive, render
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
+path_to_css = Path(__file__).parents[1] / "styles"
 
 def server(input, output, session):
 
+    themes = [
+        "light_low_contrast.css", 
+        "light_high_contrast.css",
+        # "dark_low_contrast.css",
+        "dark_high_contrast.css"
+    ]
+
+    count = reactive.Value(0)
+
+    @reactive.effect
+    @reactive.event(input.theme_toggle)
+    def theme_toggle():
+        # just flip the index, don't call include_css here
+        if count.get() == len(themes) - 1:
+            count.set(0)
+        else:
+            count.set(count.get() + 1)
+        print(f"Selected theme index: {count.get()}")
+
+        @output(id="dynamic_theme")
+        @render.ui
+        def dynamic_theme():
+            css_text = (path_to_css / themes[count.get()]).read_text()
+            return ui.tags.style(css_text)
+    
 
     def _dummy_data_for_gist():
         """Generate a dummy DataFrame for demonstration purposes."""
@@ -28,6 +55,7 @@ def server(input, output, session):
     @output(id="filters_page")
     @render.ui
     def filters_page():
+        return
         return ui.div(
             ui.output_plot("histogram_plot"),
         )
@@ -35,6 +63,7 @@ def server(input, output, session):
     @output(id="histogram_plot")
     @render.plot
     def histogram_plot():
+        return
         data = filtered_df()
         fig, ax = plt.subplots(figsize=(4, 2))
         ax.hist(data["Column 1"], bins=10, color="skyblue", edgecolor="black")
@@ -46,6 +75,7 @@ def server(input, output, session):
     @output(id="dashboard_content")
     @render.ui
     def dashboard_content():
+        return
         return ui.div(
             ui.output_data_frame("data_table"),
         )
@@ -53,6 +83,7 @@ def server(input, output, session):
     @output(id="data_table")
     @render.data_frame
     def data_table():
+        return
         return render.DataGrid(filtered_df().round(2), height="400px")
 
     @output(id="log_content")

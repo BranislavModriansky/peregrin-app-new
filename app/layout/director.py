@@ -41,8 +41,6 @@ def panel(id: str, title: str, *content):
 def quad_layout(top_left, top_right, bottom_left, bottom_right):
     """Four flexible panels arranged in two resizable, swappable columns."""
     return ui.div(
-        ui.include_css(path_to_css / "quadpanel.css"),
-        ui.include_js(path_to_js / "quadpanel.js"),
         # Navbar shown only in single-panel (maximized) mode.
         ui.div(
             ui.tags.button(
