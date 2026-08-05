@@ -798,3 +798,5 @@ body.im-modal-open::before {
 
 /* Subgroup is terminal — no child can be added, so hide the ⊕ port. */
 .im-subgroup .im-port-out { display: none; }
+
+

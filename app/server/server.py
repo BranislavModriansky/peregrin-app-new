@@ -15,15 +15,8 @@ def server(input, output, session):
 
     count = reactive.Value(0)
 
-    @reactive.effect
-    @reactive.event(input.theme_toggle)
-    def theme_toggle():
-        # just flip the index, don't call include_css here
-        if count.get() == len(themes) - 1:
-            count.set(0)
-        else:
-            count.set(count.get() + 1)
-        print(f"Selected theme index: {count.get()}")
+    @reactive.calc
+    def theme():
 
         @output(id="dynamic_theme")
         @render.ui
@@ -35,6 +28,26 @@ def server(input, output, session):
             # css_text = (path_to_css / theme).read_text()
             # return ui.tags.style(css_text)
             return ui.include_css(path_to_css / theme, method="inline")
+
+    @reactive.effect
+    @reactive.event(input.theme_toggle)
+    def _():
+        # just flip the index, don't call include_css here
+        if count.get() == len(themes) - 1:
+            count.set(0)
+        else:
+            count.set(count.get() + 1)
+        print(f"Selected theme index: {count.get()}")
+
+        theme()  # Trigger a re-render of the dynamic theme
+
+
+    @reactive.effect
+    @reactive.event(input.lightmode)
+    def _():
+        # Trigger a re-render of the dynamic theme
+        theme()
+
     
 
     def _dummy_data_for_gist():
