@@ -2,6 +2,8 @@
   --c-0: #000;
   --c-1: #1a1a1a;
   --c-2: rgb(37, 38, 39);
+  --c-t: rgb(124, 165, 207);
+  --orb-color: 142, 173, 203; /* visualizer line color (r, g, b) */
 
   --border: #5b5e63;
   --border2: #999b9f;

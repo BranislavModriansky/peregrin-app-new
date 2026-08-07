@@ -2,30 +2,37 @@
     "use strict";
 
     // ================== TUNABLE CONSTANTS ==================
-    const RINGS = 14;              // number of horizontal contour lines
-    const SEGMENTS = 100;          // points per ring (smoothness)
-    const COLOR = "rgba(145, 148, 162, 0.75)";
+    const RINGS = 14;
+    const SEGMENTS = 100;
+    const COLOR_FALLBACK = "145, 148, 162"; // used if --orb-color is not defined
     const LINE_WIDTH = 1;
 
-    const ORB_SIZE = 0.34;         // orb radius as fraction of min(viewport w,h)
-    const Y_FLATTEN = 0.925;        // vertical squash of the sphere
-    const TILT = 0.45;             // fake 3D tilt of rings
+    const ORB_SIZE = 0.34;
+    const Y_FLATTEN = 0.95;
+    const TILT_MIN = 0.25;
+    const TILT_MAX = 0.45;
+    const TILT_EASE = 0.0025;
+    const ROLL_MAX = 0.1;
 
-    // Base shape deformation (big, slow, water-drop-like undulation)
-    const BASE_NOISE_SCALE = 2.25;  // spatial frequency of base deformation
-    const BASE_DEFORM = 0.05;      // strength (small => stays orb-like)
+    // Base shape deformation
+    const BASE_NOISE_SCALE = 2.25;
+    const BASE_DEFORM = 0.005;
 
-    // Spurs (gentle smaller bumps, kept subtle so lines stay clean)
-    const SPUR_NOISE_SCALE = 1.05; // higher = more, smaller spurs
-    const SPUR_DEFORM = 0.125;     // spur height
-    const SPUR_SIDE_POWER = 6.0;   // how tightly spurs stick to the sides
-                                   // (1 = broad falloff, higher = only near the equator)
+    // Spurs
+    const SPUR_NOISE_SCALE = 1.85;
+    const SPUR_DEFORM = 0.075;
+    const SPUR_SIDE_POWER = 6.5;
 
-    const MORPH_SPEED = 0.00015;    // shape morphing speed
-    const SCAN_SPEED = 0.000005;    // scan cycle speed
-    const POLE_ACCEL = 0.5;        // 0 = linear scan, 1 = full "laser" easing
-                                   // (lines move faster near top/bottom tips)
-    const FADE_ZONE = 0.05;        // fraction of sphere near poles where lines fade out
+    const MORPH_SPEED = 0.00015;
+    const SCAN_SPEED = 0.00001;
+    const POLE_ACCEL = 0.6;
+    const FADE_ZONE = 0.05;
+
+    // ---- Fancy extras (kept) ----
+    const TRAIL_FADE = 0.08;   // motion-trail persistence (lower = longer ghost trails)
+    const DEPTH_DIM = 0.65;    // how much the "far" side of a ring dims (0..1)
+    const DEPTH_THIN = 0;    // how much line width thins on the far side
+    const DEPTH_BUCKETS = 7;   // depth quantization levels (fewer = faster, more = smoother)
     // ========================================================
 
     // ---------- Simple 3D value noise ----------
@@ -59,7 +66,7 @@
             lerp(lerp(n000, n100, u), lerp(n010, n110, u), v),
             lerp(lerp(n001, n101, u), lerp(n011, n111, u), v),
             w
-        ) * 2 - 1; // -1 .. 1
+        ) * 2 - 1;
     }
 
     // ---------- Canvas setup ----------
@@ -90,10 +97,90 @@
         window.addEventListener("resize", resize);
         resize();
 
+        // Theme-aware color: read --orb-color from CSS, refresh on theme change
+        let colorRGB = COLOR_FALLBACK;
+        let colorCheckFrames = 0; // frames left to keep re-checking after a DOM change
+
+        function updateColor() {
+            const v = getComputedStyle(document.documentElement)
+                .getPropertyValue("--orb-color").trim();
+            colorRGB = v || COLOR_FALLBACK;
+        }
+        updateColor();
+
+        // The theme is swapped by injecting/replacing <style> elements (Shiny's
+        // dynamic_theme output), so watch the whole document for style/link
+        // changes and attribute flips, then re-read the CSS variable.
+        const themeObserver = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                // Attribute change on html/body (e.g. data-bs-theme from dark mode toggle)
+                if (m.type === "attributes") { colorCheckFrames = 30; return; }
+                // Style/link elements added, removed, or their text changed
+                const nodes = [...m.addedNodes, ...m.removedNodes];
+                if (m.type === "characterData" ||
+                    nodes.some(n => n.nodeName === "STYLE" || n.nodeName === "LINK")) {
+                    colorCheckFrames = 30;
+                    return;
+                }
+            }
+        });
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class", "data-bs-theme", "data-theme"],
+            childList: true,
+            subtree: true,
+            characterData: true,
+        });
+
+        let targetTilt = 0.35, tilt = 0.35;
+        let targetRoll = 0, roll = 0;
+        window.addEventListener("mousemove", (e) => {
+            const yNorm = e.clientY / window.innerHeight;
+            targetTilt = TILT_MIN + (TILT_MAX - TILT_MIN) * yNorm;
+            const xNorm = e.clientX / window.innerWidth;
+            targetRoll = (xNorm * 2 - 1) * ROLL_MAX;
+        });
+
+        // Precompute per-segment trig (constant across frames & rings)
+        const cosTheta = new Float32Array(SEGMENTS + 1);
+        const sinTheta = new Float32Array(SEGMENTS + 1);
+        for (let j = 0; j <= SEGMENTS; j++) {
+            const theta = (j / SEGMENTS) * Math.PI * 2;
+            cosTheta[j] = Math.cos(theta);
+            sinTheta[j] = Math.sin(theta);
+        }
+
+        // Precompute stroke styles / widths per depth bucket
+        const bucketStyle = new Array(DEPTH_BUCKETS);
+        const bucketWidth = new Float32Array(DEPTH_BUCKETS);
+        for (let b = 0; b < DEPTH_BUCKETS; b++) {
+            const depth = (b + 0.5) / DEPTH_BUCKETS; // 0 back .. 1 front
+            bucketWidth[b] = LINE_WIDTH * (1 - DEPTH_THIN * (1 - depth));
+        }
+
+        // Reusable point buffers (avoid per-frame allocation)
+        const ptsX = new Float32Array(SEGMENTS + 1);
+        const ptsY = new Float32Array(SEGMENTS + 1);
+        const ptsBucket = new Uint8Array(SEGMENTS + 1);
+
         function draw(t) {
-            ctx.clearRect(0, 0, W, H);
-            ctx.strokeStyle = COLOR;
-            ctx.lineWidth = LINE_WIDTH;
+            // Re-read the theme color for a few frames after any style change
+            // (covers CSS that applies asynchronously after DOM mutation)
+            if (colorCheckFrames > 0) {
+                colorCheckFrames--;
+                updateColor();
+            }
+
+            tilt += (targetTilt - tilt) * TILT_EASE;
+            roll += (targetRoll - roll) * TILT_EASE;
+            const cosR = Math.cos(roll);
+            const sinR = Math.sin(roll);
+
+            // Motion trails: fade previous frame instead of clearing it
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.fillStyle = `rgba(0, 0, 0, ${TRAIL_FADE})`;
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = "source-over";
 
             const cx = W / 2;
             const cy = H / 2;
@@ -103,11 +190,7 @@
             const scanOffset = (t * SCAN_SPEED) % 1;
 
             for (let i = 0; i < RINGS; i++) {
-                // uniform scan position, 0..1
                 const u = (i / RINGS + 1 - scanOffset) % 1;
-
-                // "laser" easing: slow in the middle, fast at the tips.
-                // Linear u -> eased v via inverse-cosine mapping blended by POLE_ACCEL.
                 const eased = Math.acos(1 - 2 * u) / Math.PI;
                 const v = lerp(u, eased, POLE_ACCEL);
 
@@ -116,29 +199,23 @@
                 const ringR = Math.sin(phi);
                 if (ringR < 0.01) continue;
 
-                // smooth fade near the poles
                 const edge = Math.min(v, 1 - v);
-                const alpha = Math.min(1, edge / FADE_ZONE);
-                if (alpha <= 0) continue;
+                const ringAlpha = Math.min(1, edge / FADE_ZONE);
+                if (ringAlpha <= 0) continue;
 
-                ctx.globalAlpha = alpha;
-
-                // spurs only on the sides: 1 at equator, 0 at the poles
                 const sideWeight = Math.pow(ringR, SPUR_SIDE_POWER);
+                const invRingR = 1 / ringR;
 
-                ctx.beginPath();
+                // Pass 1: compute all points + their depth bucket
                 for (let j = 0; j <= SEGMENTS; j++) {
-                    const theta = (j / SEGMENTS) * Math.PI * 2;
-                    const sx = Math.cos(theta) * ringR;
-                    const sz = Math.sin(theta) * ringR;
+                    const sx = cosTheta[j] * ringR;
+                    const sz = sinTheta[j] * ringR;
 
-                    // large, gentle base undulation (water-drop feel)
                     const nBase = noise3(
                         sx * BASE_NOISE_SCALE + morphT,
                         y0 * BASE_NOISE_SCALE - morphT * 0.7,
                         sz * BASE_NOISE_SCALE + morphT * 0.5
                     );
-                    // subtle smaller spurs
                     const nSpur = noise3(
                         sx * SPUR_NOISE_SCALE - morphT * 0.6,
                         y0 * SPUR_NOISE_SCALE + morphT,
@@ -147,15 +224,43 @@
 
                     const r = 1 + nBase * BASE_DEFORM + nSpur * SPUR_DEFORM * sideWeight;
 
-                    const px = cx + sx * r * baseR;
-                    const py = cy - (y0 * Y_FLATTEN * r) * baseR + sz * r * baseR * TILT;
+                    const dx = sx * r * baseR;
+                    const dy = -(y0 * Y_FLATTEN * r) * baseR + sz * r * baseR * tilt;
 
-                    if (j === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
+                    ptsX[j] = cx + dx * cosR - dy * sinR;
+                    ptsY[j] = cy + dx * sinR + dy * cosR;
+
+                    const depth = (sz * invRingR + 1) * 0.5; // 0 back .. 1 front
+                    let b = (depth * DEPTH_BUCKETS) | 0;
+                    if (b >= DEPTH_BUCKETS) b = DEPTH_BUCKETS - 1;
+                    ptsBucket[j] = b;
                 }
-                ctx.stroke();
+
+                // Pass 2: one stroke per depth bucket (few state changes,
+                // few stroke() calls) instead of per-segment strokes
+                for (let b = 0; b < DEPTH_BUCKETS; b++) {
+                    const depth = (b + 0.5) / DEPTH_BUCKETS;
+                    const a = 0.85 * ringAlpha * (1 - DEPTH_DIM * (1 - depth));
+                    if (a <= 0.01) continue;
+
+                    ctx.strokeStyle = `rgba(${colorRGB}, ${a.toFixed(3)})`;
+                    ctx.lineWidth = bucketWidth[b];
+                    ctx.beginPath();
+                    let open = false;
+                    for (let j = 1; j <= SEGMENTS; j++) {
+                        if (ptsBucket[j] === b) {
+                            if (!open) {
+                                ctx.moveTo(ptsX[j - 1], ptsY[j - 1]);
+                                open = true;
+                            }
+                            ctx.lineTo(ptsX[j], ptsY[j]);
+                        } else {
+                            open = false;
+                        }
+                    }
+                    ctx.stroke();
+                }
             }
-            ctx.globalAlpha = 1;
 
             requestAnimationFrame(draw);
         }
