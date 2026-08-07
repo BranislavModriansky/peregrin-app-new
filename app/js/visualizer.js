@@ -2,12 +2,12 @@
     "use strict";
 
     // ================== TUNABLE CONSTANTS ==================
-    const RINGS = 14;
-    const SEGMENTS = 100;
+    let rings = 8;
+    let segments = 40;
     const COLOR_FALLBACK = "145, 148, 162"; // used if --orb-color is not defined
     const LINE_WIDTH = 1;
 
-    const ORB_SIZE = 0.34;
+    let orbSize = 0.0225;
     const Y_FLATTEN = 0.95;
     const TILT_MIN = 0.25;
     const TILT_MAX = 0.45;
@@ -29,10 +29,53 @@
     const FADE_ZONE = 0.05;
 
     // ---- Fancy extras (kept) ----
-    const TRAIL_FADE = 0.08;   // motion-trail persistence (lower = longer ghost trails)
-    const DEPTH_DIM = 0.65;    // how much the "far" side of a ring dims (0..1)
-    const DEPTH_THIN = 0;    // how much line width thins on the far side
-    const DEPTH_BUCKETS = 7;   // depth quantization levels (fewer = faster, more = smoother)
+    let trailFade = 0.08;      // motion-trail persistence (lower = longer ghost trails)
+    let lineWidth = LINE_WIDTH;
+    let depthBuckets = 7;      // depth quantization levels
+    let dprCap = 2;
+    const DEPTH_DIM = 0.65;
+    const DEPTH_THIN = 0;
+
+    // ---- Position controls ----
+    // "screen": position as % of screen width/height (POS_X / POS_Y)
+    // "title":  position relative to the navbar title element,
+    //           offset in rem (TITLE_OFFSET_X / TITLE_OFFSET_Y)
+    // "off":    don't draw the orb at all (canvas is not created)
+    let POS_MODE = "screen";
+    const POS_X = 52.5;             // % of viewport width  (screen mode)
+    const POS_Y = 50;             // % of viewport height (screen mode)
+    let zIndex = 10;             // CSS z-index of the canvas (screen mode)
+    const TITLE_SELECTOR = ".navbar-brand .app-title, .navbar-brand";
+    const TITLE_ANCHOR = "center"; // "center" | "top" | "bottom" of the title
+    const TITLE_OFFSET_X = 4.75;   // rem, added to the title anchor
+    const TITLE_OFFSET_Y = 0.1;    // rem, added to the title anchor
+
+    // Order used when cycling modes via the toggle button.
+    const MODE_CYCLE = ["screen", "title", "off"];
+
+    // Applies mode-dependent geometry for the *current* POS_MODE.
+    function applyModeGeometry() {
+        if (POS_MODE === "screen") {
+            segments = 100;
+            rings = 14;
+            orbSize = 0.35;
+            zIndex = 0;   // was -1: body's opaque background covered the canvas
+            trailFade = 0.08;
+            lineWidth = 1;
+            depthBuckets = 7;
+            dprCap = 2;
+        } else {
+            segments = 24;
+            rings = 8;
+            orbSize = 0.0225;
+            zIndex = 10;
+            trailFade = 0.5;      // no trails at tiny size — they just look like dirt
+            lineWidth = 1;    // thinner strokes scale better on a small orb
+            depthBuckets = 4;   // fewer buckets = fewer strokes, still smooth when tiny
+            dprCap = 3;         // crisper on high-DPI screens; canvas area is tiny anyway
+        }
+    }
+    applyModeGeometry();
     // ========================================================
 
     // ---------- Simple 3D value noise ----------
@@ -70,7 +113,14 @@
     }
 
     // ---------- Canvas setup ----------
+    let running = false;   // whether an animation loop is active
+    let teardown = null;   // cleanup function for the current instance
+
     function init() {
+        if (running) return;
+        if (POS_MODE === "off") return; // orb disabled — don't create the canvas
+        running = true;
+
         const canvas = document.createElement("canvas");
         canvas.id = "orb-background";
         Object.assign(canvas.style, {
@@ -79,15 +129,16 @@
             left: "0",
             width: "100vw",
             height: "100vh",
-            zIndex: "-1",
+            zIndex: zIndex,
             pointerEvents: "none",
         });
         document.body.prepend(canvas);
         const ctx = canvas.getContext("2d");
 
+        let rafId = 0;
         let W, H, DPR;
         function resize() {
-            DPR = Math.min(window.devicePixelRatio || 1, 2);
+            DPR = Math.min(window.devicePixelRatio || 1, dprCap);
             W = window.innerWidth;
             H = window.innerHeight;
             canvas.width = W * DPR;
@@ -142,26 +193,53 @@
         });
 
         // Precompute per-segment trig (constant across frames & rings)
-        const cosTheta = new Float32Array(SEGMENTS + 1);
-        const sinTheta = new Float32Array(SEGMENTS + 1);
-        for (let j = 0; j <= SEGMENTS; j++) {
-            const theta = (j / SEGMENTS) * Math.PI * 2;
+        const cosTheta = new Float32Array(segments + 1);
+        const sinTheta = new Float32Array(segments + 1);
+        for (let j = 0; j <= segments; j++) {
+            const theta = (j / segments) * Math.PI * 2;
             cosTheta[j] = Math.cos(theta);
             sinTheta[j] = Math.sin(theta);
         }
 
         // Precompute stroke styles / widths per depth bucket
-        const bucketStyle = new Array(DEPTH_BUCKETS);
-        const bucketWidth = new Float32Array(DEPTH_BUCKETS);
-        for (let b = 0; b < DEPTH_BUCKETS; b++) {
-            const depth = (b + 0.5) / DEPTH_BUCKETS; // 0 back .. 1 front
-            bucketWidth[b] = LINE_WIDTH * (1 - DEPTH_THIN * (1 - depth));
+        const bucketStyle = new Array(depthBuckets);
+        const bucketWidth = new Float32Array(depthBuckets);
+        for (let b = 0; b < depthBuckets; b++) {
+            const depth = (b + 0.5) / depthBuckets;
+            bucketWidth[b] = lineWidth * (1 - DEPTH_THIN * (1 - depth));
         }
 
         // Reusable point buffers (avoid per-frame allocation)
-        const ptsX = new Float32Array(SEGMENTS + 1);
-        const ptsY = new Float32Array(SEGMENTS + 1);
-        const ptsBucket = new Uint8Array(SEGMENTS + 1);
+        const ptsX = new Float32Array(segments + 1);
+        const ptsY = new Float32Array(segments + 1);
+        const ptsBucket = new Uint8Array(segments + 1);
+
+        // ---- Orb center resolution (cached, refreshed on resize) ----
+        let centerX = W / 2, centerY = H / 2;
+        let centerCheckFrames = 5; // re-resolve for a few frames on startup/resize
+
+        function resolveCenter() {
+            if (POS_MODE === "title") {   // was "screen" — inverted logic
+                const el = document.querySelector(TITLE_SELECTOR);
+                if (el) {
+                    const rem = parseFloat(
+                        getComputedStyle(document.documentElement).fontSize
+                    ) || 16;
+                    const r = el.getBoundingClientRect();
+                    let ax = r.left + r.width / 2;
+                    let ay = TITLE_ANCHOR === "top" ? r.top
+                           : TITLE_ANCHOR === "bottom" ? r.bottom
+                           : r.top + r.height / 2;
+                    centerX = ax + TITLE_OFFSET_X * rem;
+                    centerY = ay + TITLE_OFFSET_Y * rem;
+                    return;
+                }
+                // fall through to absolute if title not found
+            }
+            centerX = (POS_X / 100) * W;
+            centerY = (POS_Y / 100) * H;
+        }
+        window.addEventListener("resize", () => { centerCheckFrames = 5; });
 
         function draw(t) {
             // Re-read the theme color for a few frames after any style change
@@ -170,27 +248,36 @@
                 colorCheckFrames--;
                 updateColor();
             }
+            if (centerCheckFrames > 0) {
+                centerCheckFrames--;
+                resolveCenter();
+            }
 
             tilt += (targetTilt - tilt) * TILT_EASE;
             roll += (targetRoll - roll) * TILT_EASE;
             const cosR = Math.cos(roll);
             const sinR = Math.sin(roll);
 
-            // Motion trails: fade previous frame instead of clearing it
-            ctx.globalCompositeOperation = "destination-out";
-            ctx.fillStyle = `rgba(0, 0, 0, ${TRAIL_FADE})`;
-            ctx.fillRect(0, 0, W, H);
-            ctx.globalCompositeOperation = "source-over";
+            const cx = centerX;
+            const cy = centerY;
+            const baseR = Math.min(W, H) * orbSize;
 
-            const cx = W / 2;
-            const cy = H / 2;
-            const baseR = Math.min(W, H) * ORB_SIZE;
+            // Clear/fade only the region the orb occupies
+            const pad = baseR * 1.4 + 4;
+            if (trailFade >= 1) {
+                ctx.clearRect(cx - pad, cy - pad, pad * 2, pad * 2);
+            } else {
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.fillStyle = `rgba(0, 0, 0, ${trailFade})`;
+                ctx.fillRect(cx - pad, cy - pad, pad * 2, pad * 2);
+                ctx.globalCompositeOperation = "source-over";
+            }
 
             const morphT = t * MORPH_SPEED;
             const scanOffset = (t * SCAN_SPEED) % 1;
 
-            for (let i = 0; i < RINGS; i++) {
-                const u = (i / RINGS + 1 - scanOffset) % 1;
+            for (let i = 0; i < rings; i++) {
+                const u = (i / rings + 1 - scanOffset) % 1;
                 const eased = Math.acos(1 - 2 * u) / Math.PI;
                 const v = lerp(u, eased, POLE_ACCEL);
 
@@ -207,7 +294,7 @@
                 const invRingR = 1 / ringR;
 
                 // Pass 1: compute all points + their depth bucket
-                for (let j = 0; j <= SEGMENTS; j++) {
+                for (let j = 0; j <= segments; j++) {
                     const sx = cosTheta[j] * ringR;
                     const sz = sinTheta[j] * ringR;
 
@@ -231,15 +318,14 @@
                     ptsY[j] = cy + dx * sinR + dy * cosR;
 
                     const depth = (sz * invRingR + 1) * 0.5; // 0 back .. 1 front
-                    let b = (depth * DEPTH_BUCKETS) | 0;
-                    if (b >= DEPTH_BUCKETS) b = DEPTH_BUCKETS - 1;
+                    let b = (depth * depthBuckets) | 0;
+                    if (b >= depthBuckets) b = depthBuckets - 1;
                     ptsBucket[j] = b;
                 }
 
-                // Pass 2: one stroke per depth bucket (few state changes,
-                // few stroke() calls) instead of per-segment strokes
-                for (let b = 0; b < DEPTH_BUCKETS; b++) {
-                    const depth = (b + 0.5) / DEPTH_BUCKETS;
+                // Pass 2: one stroke per depth bucket
+                for (let b = 0; b < depthBuckets; b++) {
+                    const depth = (b + 0.5) / depthBuckets;
                     const a = 0.85 * ringAlpha * (1 - DEPTH_DIM * (1 - depth));
                     if (a <= 0.01) continue;
 
@@ -247,7 +333,7 @@
                     ctx.lineWidth = bucketWidth[b];
                     ctx.beginPath();
                     let open = false;
-                    for (let j = 1; j <= SEGMENTS; j++) {
+                    for (let j = 1; j <= segments; j++) {
                         if (ptsBucket[j] === b) {
                             if (!open) {
                                 ctx.moveTo(ptsX[j - 1], ptsY[j - 1]);
@@ -264,8 +350,46 @@
 
             requestAnimationFrame(draw);
         }
-        requestAnimationFrame(draw);
+        rafId = requestAnimationFrame(draw);
+
+        // Save a teardown for when the mode changes.
+        teardown = function () {
+            running = false;
+            cancelAnimationFrame(rafId);
+            themeObserver.disconnect();
+            canvas.remove();
+        };
     }
+
+    // Public: switch to an explicit mode, rebuilding the canvas.
+    function setMode(mode) {
+        if (!MODE_CYCLE.includes(mode)) return;
+        POS_MODE = mode;
+        applyModeGeometry();
+        if (teardown) { teardown(); teardown = null; }
+        init(); // no-op if mode is "off"
+    }
+
+    // Public: advance to the next mode in the cycle.
+    function cycleMode() {
+        const i = MODE_CYCLE.indexOf(POS_MODE);
+        setMode(MODE_CYCLE[(i + 1) % MODE_CYCLE.length]);
+    }
+
+    // Expose a small control surface for external triggers (e.g. Shiny).
+    window.OrbVisualizer = { setMode, cycleMode, getMode: () => POS_MODE };
+
+    // React to Shiny custom messages, if Shiny is present.
+    function registerShiny() {
+        if (window.Shiny && Shiny.addCustomMessageHandler) {
+            Shiny.addCustomMessageHandler("orb_set_mode", (msg) => {
+                if (msg && typeof msg.mode === "string") setMode(msg.mode);
+                else cycleMode();
+            });
+        }
+    }
+    if (window.Shiny) registerShiny();
+    else document.addEventListener("shiny:connected", registerShiny);
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", init);

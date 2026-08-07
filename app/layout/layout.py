@@ -20,7 +20,11 @@ app_ui = ui.page_sidebar(
         open='closed',
         width="16rem",
     ),
-    ui.input_action_button("theme_toggle", "◑", class_="theme-toggle"),
+    ui.div(
+        ui.input_action_button("anim_toggle", "⦽", class_="anim-toggle"),
+        ui.input_action_button("theme_toggle", "◑", class_="theme-toggle"),
+        class_="sidebar-buttons",
+    ),
     ui.navset_bar(
         ui.nav_panel("Menu", menu_content),
         ui.nav_panel(
