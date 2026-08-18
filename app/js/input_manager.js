@@ -71,7 +71,7 @@
     const input = addNode(state, "input", 40, 40, null);
 
     // Default set element, connected to the input, and non-removable.
-    const defaultSet = addNode(state, "set", 260, 60, input.id);
+    const defaultSet = addNode(state, "set", 260, 60, input.id, false);
     defaultSet.locked = true;
     defaultSet.el.classList.add("im-locked");
 
@@ -124,7 +124,25 @@
   }
 
   function toggleFullView(container) {
-    const on = container.classList.toggle("im-fullview-on");
+    const on = !container.classList.contains("im-fullview-on");
+
+    if (on) {
+      // Remember original position so we can restore later.
+      container._imPlaceholder = document.createComment("im-placeholder");
+      container.parentNode.insertBefore(container._imPlaceholder, container);
+      document.body.appendChild(container);
+      container.classList.add("im-fullview-on");
+    } else {
+      container.classList.remove("im-fullview-on");
+      if (container._imPlaceholder && container._imPlaceholder.parentNode) {
+        container._imPlaceholder.parentNode.insertBefore(
+          container, container._imPlaceholder
+        );
+        container._imPlaceholder.remove();
+        container._imPlaceholder = null;
+      }
+    }
+
     document.body.classList.toggle("im-modal-open", on);
     const btn = container.querySelector(".im-fullview");
     if (btn) btn.textContent = on ? "⤡" : "⤢";
@@ -150,7 +168,7 @@
     subgroup: "Subgroup",
   };
 
-  function addNode(state, type, x, y, parentId) {
+  function addNode(state, type, x, y, parentId, autoSelect = true) {
     const id = nextId("im-" + type);
     const el = document.createElement("div");
     el.className = "im-node im-" + type;
@@ -184,7 +202,7 @@
 
     if (!isInput) {
       const nameEl = el.querySelector(".im-node-name");
-      setTimeout(() => selectText(nameEl), 0);
+      if (autoSelect) setTimeout(() => selectText(nameEl), 0);
       nameEl.addEventListener("blur", () => {
         node.name = nameEl.textContent.trim() || TYPE_LABEL[type];
         nameEl.textContent = node.name;

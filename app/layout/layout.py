@@ -45,7 +45,7 @@ app_ui = ui.page_sidebar(
             )
         ),
         id="main_nav",
-        selected="Workspace",
+        selected="Menu",
     ),
     ui.head_content(
         ui.include_css(path_to_css / "styles.css"),
