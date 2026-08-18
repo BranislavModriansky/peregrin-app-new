@@ -57,9 +57,9 @@ def quad_layout(top_left, top_right, bottom_left, bottom_right):
         ui.div(
             # Left column: two stacked slots + horizontal divider.
             ui.div(
-                ui.div(top_left, class_="qp-slot", id="qp-slot-tl", **{"data-slot": "tl"}),
+                ui.div(top_left, class_="qp-slot", id="qp-slot-tl", **{"data-slot": "tl", "data-qp-title": "Dashboard"}),
                 ui.div(class_="qp-divider qp-divider-h", **{"data-col": "left"}),
-                ui.div(bottom_left, class_="qp-slot", id="qp-slot-bl", **{"data-slot": "bl"}),
+                ui.div(bottom_left, class_="qp-slot", id="qp-slot-bl", **{"data-slot": "bl", "data-qp-title": "Log"}),
                 class_="qp-col",
                 id="qp-col-left",
                 **{"data-col": "left"},
@@ -68,9 +68,9 @@ def quad_layout(top_left, top_right, bottom_left, bottom_right):
             ui.div(class_="qp-divider qp-divider-v", id="qp-divider-v"),
             # Right column.
             ui.div(
-                ui.div(top_right, class_="qp-slot", id="qp-slot-tr", **{"data-slot": "tr"}),
+                ui.div(top_right, class_="qp-slot", id="qp-slot-tr", **{"data-slot": "tr", "data-qp-title": "Filters"}),
                 ui.div(class_="qp-divider qp-divider-h", **{"data-col": "right"}),
-                ui.div(bottom_right, class_="qp-slot", id="qp-slot-br", **{"data-slot": "br"}),
+                ui.div(bottom_right, class_="qp-slot", id="qp-slot-br", **{"data-slot": "br", "data-qp-title": "Explorer"}),
                 class_="qp-col",
                 id="qp-col-right",
                 **{"data-col": "right"},

@@ -45,11 +45,11 @@ app_ui = ui.page_sidebar(
             )
         ),
         id="main_nav",
-        selected="Menu",
+        selected="Workspace",
     ),
     ui.head_content(
-        ui.include_css(path_to_css / "light_low_contrast.css"),
-        ui.output_ui("dynamic_theme", style="overflow: hidden; height: 0; width: 0; position: absolute; padding: 0"),
+        ui.include_css(path_to_css / "styles.css"),
+        ui.include_js(path_to_js / "theme_manager.js", method="inline"),
         ui.include_js(path_to_js / "input_manager.js", method="inline"),
         ui.include_js(path_to_js / "quadpanel.js", method="inline"),
     ),

@@ -416,9 +416,9 @@ body.qp-resizing iframe { pointer-events: none; }
   content: "";
   position: absolute;
   inset: 1px;
-  border: 2px dotted #808080;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.51);
+  border: 2px dashed #808080;
+  border-radius: 0.1rem;
+  background: rgba(182, 182, 182, 0.651);
   pointer-events: none;
   z-index: 5;
 }

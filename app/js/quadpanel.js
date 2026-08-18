@@ -36,6 +36,9 @@
     wireResizers(grid, state);
     wireDragDrop(grid, state);
 
+    // Promote panel headers to slot level so their controls sit outside the mask.
+    syncHeaders(grid);
+
     // Collapse the Console panel (bottom-left) by default.
     const consoleSlot = grid.querySelector('#qp-col-left .qp-slot:last-child');
     if (consoleSlot) toggleCollapse(consoleSlot);
@@ -122,7 +125,8 @@
         const slot = collapseBtn.closest(".qp-slot");
         if (slot) toggleCollapse(slot);
       } else if (maxBtn) {
-        const panel = maxBtn.closest(".qp-panel");
+        const slot = maxBtn.closest(".qp-slot");
+        const panel = slot ? slot.querySelector(":scope > .qp-panel") : null;
         if (panel) enterMaximized(root, grid, state, panel.id);
       }
     });
@@ -148,6 +152,7 @@
 
     // Nudge Shiny/browser to (re)bind & size any outputs revealed on expand.
     if (!collapse) nudgeShiny(slot);
+    syncHeaders(slot.closest(".qp-grid"));
   }
 
   /* ---------- Maximize -> single-panel navbar view ---------- */
@@ -221,6 +226,7 @@
 
     // Nudge Shiny to bind & size any outputs revealed by maximizing.
     nudgeShiny(slot);
+    syncHeaders(grid);
   }
 
   function exitMaximized(root, grid, state) {
@@ -249,6 +255,7 @@
 
     // Re-bind/size all panels when returning to the grid.
     nudgeShiny(grid);
+    syncHeaders(grid);
   }
 
   function nudgeShiny(scope) {
@@ -274,20 +281,99 @@
       if (!grip || state.maximized) return;
       e.preventDefault();
 
-      const panel = grip.closest(".qp-panel");
-      sourceSlot = panel.closest(".qp-slot");
+      sourceSlot = grip.closest(".qp-slot");
+      const panel = sourceSlot
+        ? sourceSlot.querySelector(":scope > .qp-panel")
+        : null;
+      if (!panel) return;
       dragging = panel;
+
+      const isCollapsed = sourceSlot.classList.contains("qp-collapsed");
 
       const rect = panel.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
 
-      ghost = panel.cloneNode(true);
+      if (isCollapsed) {
+        // Collapsed slots keep their header inside the panel and hide the body.
+        // Drag only the collapsed representation (panel with hidden body).
+        ghost = document.createElement("div");
+        ghost.classList.add("qp-ghost");
+        ghost.style.width = rect.width + "px";
+        ghost.style.height = rect.height + "px";
+        ghost.style.left = rect.left + "px";
+        ghost.style.top = rect.top + "px";
+
+        const pClone = panel.cloneNode(true);
+        pClone.style.margin = "0";
+        pClone.style.height = rect.height + "px";
+        pClone.style.backdropFilter = "blur(3px)";
+        pClone.style.webkitBackdropFilter = "blur(3px)";
+        // Ensure the body stays hidden in the ghost (matches collapsed state).
+        pClone.querySelectorAll(".qp-body").forEach((b) => {
+          b.style.display = "none";
+        });
+        ghost.appendChild(pClone);
+
+        document.body.appendChild(ghost);
+
+        panel.classList.add("qp-drag-source");
+        document.body.classList.add("qp-dragging");
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+        return;
+      }
+
+      // Build a ghost that includes the slot-level header + panel, so the
+      // dragged preview shows the title/controls above the panel body.
+      const slotHeader = sourceSlot.querySelector(":scope > .qp-header");
+      const headerH = slotHeader ? slotHeader.getBoundingClientRect().height : 0;
+
+      ghost = document.createElement("div");
       ghost.classList.add("qp-ghost");
       ghost.style.width = rect.width + "px";
-      ghost.style.height = rect.height + "px";
+      ghost.style.height = rect.height + headerH + "px";
       ghost.style.left = rect.left + "px";
-      ghost.style.top = rect.top + "px";
+      ghost.style.top = (rect.top - headerH) + "px";
+
+      if (slotHeader) {
+        const hClone = slotHeader.cloneNode(true);
+        hClone.style.position = "relative";
+        hClone.style.top = "0";
+        hClone.style.left = "0";
+        hClone.style.right = "0";
+        hClone.style.transform = "none";
+        hClone.style.height = headerH + "px";
+        hClone.style.background = "transparent";
+        hClone.style.backdropFilter = "none";
+        hClone.style.webkitBackdropFilter = "none";
+
+        // Preserve exact rendered typography of the title so it doesn't appear
+        // to grow while dragging.
+        const srcTitle = slotHeader.querySelector(".qp-title");
+        const dstTitle = hClone.querySelector(".qp-title");
+        if (srcTitle && dstTitle) {
+          const cs = getComputedStyle(srcTitle);
+          dstTitle.style.fontSize = cs.fontSize;
+          dstTitle.style.fontWeight = cs.fontWeight;
+          dstTitle.style.lineHeight = cs.lineHeight;
+          dstTitle.style.letterSpacing = cs.letterSpacing;
+          dstTitle.style.transform = "none";
+        }
+        ghost.appendChild(hClone);
+      }
+      const pClone = panel.cloneNode(true);
+      pClone.style.margin = "0";
+      pClone.style.height = rect.height + "px";
+      // Blur belongs to the panel only, not the header.
+      pClone.style.backdropFilter = "blur(3px)";
+      pClone.style.webkitBackdropFilter = "blur(3px)";
+      ghost.appendChild(pClone);
+
+      // Keep the drag anchor consistent with the added header height.
+      offsetY += headerH;
+
       document.body.appendChild(ghost);
 
       panel.classList.add("qp-drag-source");
@@ -335,10 +421,44 @@
   }
 
   function swapSlots(a, b) {
-    const pa = a.querySelector(".qp-panel");
-    const pb = b.querySelector(".qp-panel");
+    const pa = a.querySelector(":scope > .qp-panel");
+    const pb = b.querySelector(":scope > .qp-panel");
+    const ha = a.querySelector(":scope > .qp-header");
+    const hb = b.querySelector(":scope > .qp-header");
     if (!pa || !pb) return;
+
+    // Move panels (and their slot-level headers) between slots.
     a.appendChild(pb);
+    if (hb) a.appendChild(hb);
     b.appendChild(pa);
+    if (ha) b.appendChild(ha);
+
+    syncHeaders(a.closest(".qp-grid"));
+  }
+
+  /* ---------- Header placement (outside the masked panel) ---------- */
+
+  // Move each panel's header up to its slot (once), and back into the panel
+  // when the slot is collapsed or maximized so default styling applies.
+  function syncHeaders(grid) {
+    grid.querySelectorAll(".qp-slot").forEach((slot) => {
+      const panel = slot.querySelector(":scope > .qp-panel");
+      if (!panel) return;
+      let header =
+        slot.querySelector(":scope > .qp-header") ||
+        panel.querySelector(":scope > .qp-header");
+      if (!header) return;
+
+      const single = slot.classList.contains("qp-active-slot");
+      const collapsed = slot.classList.contains("qp-collapsed");
+
+      if (single || collapsed) {
+        // Keep header inside the panel (default in-panel styling).
+        if (header.parentElement !== panel) panel.insertBefore(header, panel.firstChild);
+      } else {
+        // Lift header to slot level so grip/buttons are clickable above the mask.
+        if (header.parentElement !== slot) slot.insertBefore(header, panel);
+      }
+    });
   }
 })();

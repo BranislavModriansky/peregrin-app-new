@@ -12,7 +12,23 @@ def server(input, output, session):
         "low_contrast.css", 
         "high_contrast.css",
     ]
+    contrast_levels = ["low_contrast", "high_contrast"]
+    contrast_idx = reactive.Value(0)
 
+    def _current_theme_name():
+        mode = "dark" if input.lightmode() == "dark" else "light"
+        return f"{mode}_{contrast_levels[contrast_idx.get()]}"
+
+    @reactive.effect
+    @reactive.event(input.theme_toggle)
+    async def _toggle_contrast():
+        contrast_idx.set((contrast_idx.get() + 1) % len(contrast_levels))
+        await session.send_custom_message("set-theme", {"name": _current_theme_name()})
+
+    @reactive.effect
+    @reactive.event(input.lightmode)
+    async def _toggle_mode():
+        await session.send_custom_message("set-theme", {"name": _current_theme_name()})
     count = reactive.Value(0)
 
     @reactive.calc
@@ -41,18 +57,6 @@ def server(input, output, session):
 
         theme()  # Trigger a re-render of the dynamic theme
 
-
-    @reactive.effect
-    @reactive.event(input.lightmode)
-    def _():
-        # Trigger a re-render of the dynamic theme
-        theme()
-
-    # @reactive.effect
-    # @reactive.event(input.anim_toggle)
-    # async def _():
-    #     # Cycle the orb visualizer's position mode (screen -> title -> off).
-    #     await session.send_custom_message("orb_set_mode", {})
 
     def _dummy_data_for_gist():
         """Generate a dummy DataFrame for demonstration purposes."""
@@ -122,6 +126,7 @@ def server(input, output, session):
     def explorer_content():
         col_min = float(df["Column 1"].min())
         col_max = float(df["Column 1"].max())
+        return
         return ui.div(
             ui.input_slider(
                 "value_filter",
