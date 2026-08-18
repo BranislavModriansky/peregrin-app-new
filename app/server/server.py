@@ -48,11 +48,11 @@ def server(input, output, session):
         # Trigger a re-render of the dynamic theme
         theme()
 
-    @reactive.effect
-    @reactive.event(input.anim_toggle)
-    async def _():
-        # Cycle the orb visualizer's position mode (screen -> title -> off).
-        await session.send_custom_message("orb_set_mode", {})
+    # @reactive.effect
+    # @reactive.event(input.anim_toggle)
+    # async def _():
+    #     # Cycle the orb visualizer's position mode (screen -> title -> off).
+    #     await session.send_custom_message("orb_set_mode", {})
 
     def _dummy_data_for_gist():
         """Generate a dummy DataFrame for demonstration purposes."""

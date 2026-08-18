@@ -50,10 +50,29 @@ app_ui = ui.page_sidebar(
     ui.head_content(
         ui.include_css(path_to_css / "light_low_contrast.css"),
         ui.output_ui("dynamic_theme", style="overflow: hidden; height: 0; width: 0; position: absolute; padding: 0"),
-        # ui.tags.script(src="/js/input_manager.js"),
-        # ui.tags.script(src="/js/quadpanel.js"),
         ui.include_js(path_to_js / "input_manager.js", method="inline"),
         ui.include_js(path_to_js / "quadpanel.js", method="inline"),
-        ui.include_js(path_to_js / "visualizer.js", method="inline"),
     ),
+    ui.tags.div(
+        ui.tags.div(class_="grid-wall"),
+        ui.tags.div(class_="grid-left"),
+        ui.tags.div(class_="grid-right"),
+        class_="grid-bg",
+    ),
+    ui.div(
+        "",
+        ui.HTML("""
+            <svg width='0' height='0' aria-hidden='true'>
+                <filter id='grain'>
+                    <feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/>
+                    <feColorMatrix type='saturate' values='0'/>
+                    <feComponentTransfer>
+                        <feFuncA type='linear' slope='0.15'/>
+                    </feComponentTransfer>
+                    <feComposite operator='over' in2='SourceGraphic'/>
+                </filter>
+            </svg>
+        """),
+        class_="invisible-injector"
+    )
 )

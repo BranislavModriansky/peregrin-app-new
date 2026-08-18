@@ -1,63 +1,28 @@
 :root {
   --bg: #fff;
-
+  /* --panel-bg: #fcfafaba; */
+  --panel-bg: #dce0e45a;
   --panel-bg: #eceef1;
-
   --c-1: #d7d7df;
   --border: #e5e7eb;
+  /* f4f4f4 */
   --border2: #edeff4;
   --border3: #e0e0e0;
   --c-ct: rgb(141, 204, 143);
-  --orb-color: 141, 204, 143;
+  --orb-color: 141, 204, 143; /* visualizer line color (r, g, b) */
 
-  --grid-color: rgba(248, 248, 248, 0);
+  --grid-color: rgb(245, 245, 245);
   --grid-size: 6px;
 }
 
 
-
-.invisible-injector {
-  content: "";
-  position: absolute;
-  padding: 0 !important;
-  margin: 0 !important;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-
 body {
-  background: var(--bg) !important;
-  position: relative;
-  overflow-x: hidden;
+  background-color: var(--bg) !important;
+  background-image:
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px) !important;
+  background-size: var(--grid-size) var(--grid-size) !important;
 }
-
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: -50%;
-  z-index: -1;
-  pointer-events: none;
-  background: repeating-conic-gradient(
-    from 0deg at 30% 20%,
-    #05050510 0deg,
-    #05050505 25deg,
-    #05050515 50deg,
-    var(--bg) 75deg,
-    #05050515 100deg
-  );
-  filter: blur(40px) url(#grain);
-}
-
-body::after {
-  transform: rotate(180deg); /* mirrors the same conic from the opposite corner */
-  mix-blend-mode: screen;   /* try 'difference' or 'overlay' too */
-}
-
-
 
 .main {
   padding: 0 !important;
@@ -65,7 +30,15 @@ body::after {
 }
 
 .navbar {
+  /* background-color: var(--bg) !important; */
   background-color: transparent !important;
+  background-image: linear-gradient(
+    to bottom, 
+    rgba(255, 255, 255, 0.9), 
+    rgba(255, 255, 255, 0.8) 50%, 
+    rgba(255, 255, 255, 0.6) 95%, 
+    transparent
+  ) !important;
   border: none !important;
   height: 3rem !important;
   padding-bottom: 0.2rem !important;
@@ -212,55 +185,31 @@ bslib-input-dark-mode {
 .qp-col-collapsed > .qp-slot:not(.qp-collapsed) { flex: 1 1 auto !important; }
 
 .qp-slot {
-  /* box-shadow: 0px 2px 10px rgba(61, 61, 61, 0.05); */
-  border-radius: 0rem;
-}
-
-.qp-slot:not(.qp-single-mode) {
-  background: transparent;
-  border: transparent;
+  box-shadow: 0px 2px 10px rgba(61, 61, 61, 0.05);
+  border-radius: 0.8rem;
 }
 
 /* --- Panel --- */
 .qp-panel {
-  --s: 15px;
-  --side-gap: 1px;
-  --panel-border-color: grey;
-
-  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 0rem;
-  border: 0.13rem solid var(--panel-border-color) !important;
-  background: var(--panel-bg) content-box;
-  mask: 
-    conic-gradient(#000 0 0) content-box,
-    conic-gradient(at var(--s) var(--s), transparent 75%,#000 0) 
-    0 0/calc(100% - var(--s)) calc(100% - var(--s));
+  /* padding: 0.6rem;
+  margin: 0.6rem; */
+  padding-bottom: -0.4rem;
+  border: 1px solid var(--border) !important;
+  border-radius: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(6px);
   overflow: hidden;
-  box-shadow: 0px 0px 16px -10px rgba(0, 0, 0, 0.5);
-  /* transition: border-color 0.25s ease-in; */
+  transition: border-color 0.25s ease-in;
   box-sizing: border-box;
 }
 
-.qp-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    /* Top border */
-    linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat center top / calc(100% - (var(--s) + var(--side-gap)) * 2) 1px,
-    /* Bottom border */
-    linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat center bottom / calc(100% - (var(--s) + var(--side-gap)) * 2) 1px,
-    /* Left border */
-    linear-gradient(to bottom, var(--panel-border-color), var(--panel-border-color)) no-repeat left center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2),
-    /* Right border */
-    linear-gradient(to bottom, var(--panel-border-color), var(--panel-border-color)) no-repeat right center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2);
-  /* transition: background 0.25s ease-in; */
+.qp-panel:hover {
+  border-color: #d1d2d3 !important;
+  transition: border-color 0.25s ease-in;
 }
-
 
 .qp-header {
   display: flex;
@@ -382,11 +331,6 @@ body.qp-resizing iframe { pointer-events: none; }
   border: none;
   border-radius: 0;
   box-shadow: none;
-  mask: none;
-}
-
-.qp-single-mode .qp-active-slot .qp-panel::after {
-  display: none;
 }
 
 /* Navbar styled as a clean toolbar in maximized mode. */
@@ -415,28 +359,17 @@ body.qp-resizing iframe { pointer-events: none; }
 .qp-drop-target::after {
   content: "";
   position: absolute;
-  inset: 1px;
-  border: 2px dotted #808080;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.51);
+  inset: 0;
+  border: 0.1rem dotted #808080cf;
+  border-radius: 0;
+  background: rgba(143, 143, 143, 0.384);
   pointer-events: none;
   z-index: 5;
 }
-
-/* When a slot is a drop target, remove the qp-panel borders. */
-.qp-drop-target .qp-panel {
-  border-color: transparent !important;
-}
-.qp-drop-target .qp-panel::after {
-  background: none;
-}
-
 .qp-ghost {
   position: fixed;
   z-index: 9999;
   pointer-events: none;
-  /* opacity on the element itself breaks backdrop-filter — remove it */
-    -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
@@ -444,7 +377,14 @@ body.qp-dragging { cursor: grabbing; user-select: none; }
 body.qp-dragging iframe { pointer-events: none; }
 
 
-
+/* .html-fill-container[data-value="Workspace"] {
+  margin: 0 !important;
+  padding-top: 0.4rem !important;
+  padding-left: 0.4rem !important;
+  padding-right: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  border: none !important;
+} */
 
 .main {
   padding: 0 !important;
@@ -590,46 +530,19 @@ body.qp-dragging iframe { pointer-events: none; }
   padding-right: 0.6rem;
 }
 
-.panel-content {
-  padding: 0.2rem 0.6rem;
-}
-
 .static-panel {
-  --s: 15px; /* size of the corners */
-  --side-gap: 1px; /* space between corner borders and side borders */
-  --panel-border-color: grey;
-
-  position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0rem;
+  padding: 0.6rem;
   margin-top: 0.6rem;
   margin-left: 0.6rem;
-  border: 0.13rem solid var(--panel-border-color) !important;
-  background: var(--panel-bg) content-box;
-  mask: 
-    conic-gradient(#000 0 0) content-box,
-    conic-gradient(at var(--s) var(--s),#0000 75%,#000 0) 
-    0 0/calc(100% - var(--s)) calc(100% - var(--s));
+  border: 1px solid var(--border2) !important;
+  border-radius: 0.8rem;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
   overflow: hidden;
-  /* transition: border-color 0.25s ease-in; */
-}
-
-.static-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    /* Top border */
-    linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat center top / calc(100% - (var(--s) + var(--side-gap)) * 2) 1px,
-    /* Bottom border */
-    linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat center bottom / calc(100% - (var(--s) + var(--side-gap)) * 2) 1px,
-    /* Left border */
-    linear-gradient(to bottom, var(--panel-border-color), var(--panel-border-color)) no-repeat left center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2),
-    /* Right border */
-    linear-gradient(to bottom, var(--panel-border-color), var(--panel-border-color)) no-repeat right center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2);
-  /* transition: background 0.25s ease-in; */
+  box-shadow: 0px 2px 10px rgba(225, 225, 225, 0.75);
+  transition: border-color 0.25s ease-in;
 }
 
 .html-fill-container[data-value="Menu"] {
@@ -666,10 +579,15 @@ body.qp-dragging iframe { pointer-events: none; }
 }
 
 .input-panel {
-  /* background-color: transparent !important; */
+  background-color: transparent !important;
   background-image: linear-gradient(to bottom, #edf0f2a0, #bdc4cb7a);
-  box-shadow: 0px 2px 10px rgba(225, 225, 225, 0.75);
-  /* border: 1px solid var(--border2) !important; */
+  border: 1px solid var(--border2) !important;
+}
+
+.static-panel:hover {
+  background-color: var(--panel-bg) !important;
+  border-color: #d1d2d3 !important;
+  transition: border-color 0.25s ease-in;
 }
 
 
