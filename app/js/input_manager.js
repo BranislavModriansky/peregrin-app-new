@@ -36,7 +36,7 @@
       fileInput: null,
       panX: 0,
       panY: 0,
-      zoom: 1,
+      zoom: 0.75,         // start zoomed out by default
     };
 
     buildToolbar(container, state);
@@ -58,6 +58,12 @@
     svg.classList.add("im-links");
     viewport.appendChild(svg);
     state.svg = svg;
+
+    // Grid "weight" overlay — darkens dots beneath nodes.
+    const weight = document.createElement("div");
+    weight.className = "im-weight";
+    viewport.insertBefore(weight, svg); // below links & nodes
+    state.weight = weight;
 
     // Hidden file input reused for all uploads.
     const fileInput = document.createElement("input");
@@ -153,7 +159,7 @@
   function resetPan(state) {
     state.panX = 0;
     state.panY = 0;
-    state.zoom = 1;
+    state.zoom = 0.75; // match the default zoomed-out view
     applyPan(state);
     redrawLinks(state);
   }
@@ -553,6 +559,14 @@
   function redrawLinks(state) {
     const svg = state.svg;
     const vr = state.viewport.getBoundingClientRect();
+
+    // If the viewport isn't measurable yet (e.g. just inserted / hidden),
+    // the endpoint rects would be invalid and links could vanish. Retry.
+    if (vr.width === 0 || vr.height === 0) {
+      requestAnimationFrame(() => redrawLinks(state));
+      return;
+    }
+
     // Viewport is scaled; use its UNSCALED size so the SVG's coordinate
     // system matches the unscaled node/link coordinates.
     const w = vr.width / state.zoom;
@@ -587,6 +601,50 @@
       handle.dataset.childId = node.id;
       svg.appendChild(handle);
     });
+
+    redrawWeight(state);
+  }
+  // Paint a soft radial darkening at each node's centre so the dot grid
+  // appears to sag under the element's "weight".
+  function redrawWeight(state) {
+    const layer = state.weight;
+    if (!layer) return;
+
+    const styles = getComputedStyle(state.canvas);
+    const gridSize =
+      parseFloat(styles.getPropertyValue("--im-grid-size")) || 18;
+    const darkDot =
+      styles.getPropertyValue("--im-grid-weight").trim() || "rgba(0,0,0,0.35)";
+
+    // Same dot geometry as the base grid (1px), darker color only.
+    layer.style.backgroundImage =
+      `radial-gradient(${darkDot} 1px, transparent 1px)`;
+    layer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+    layer.style.backgroundPosition = "0 0";
+
+    const masks = [];
+    for (const node of state.nodes) {
+      const shape = node.el.querySelector(".im-circle, .im-square");
+      if (!shape) continue;
+
+      const cx = node.x + shape.offsetLeft + shape.offsetWidth / 2;
+      const cy = node.y + shape.offsetTop + shape.offsetHeight / 2;
+      const base = Math.max(shape.offsetWidth, shape.offsetHeight) / 2;
+      const radius = base + 90; // halo reach
+      const core = Math.round((base / radius) * 100);
+
+      masks.push(
+        `radial-gradient(circle ${radius}px at ${cx}px ${cy}px, ` +
+          `#000 0%, #000 ${core}%, transparent 100%)`
+      );
+    }
+
+    const mask = masks.join(", ");
+    layer.style.webkitMaskImage = mask || "none";
+    layer.style.maskImage = mask || "none";
+    // When multiple mask layers overlap, take the darkest (union) coverage.
+    layer.style.webkitMaskComposite = "source-over";
+    layer.style.maskComposite = "add";
   }
 
   // Cubic bezier control points (must match bezier()).
@@ -768,6 +826,52 @@
 
       addNode(state, childType, parent.x + 180, parent.y + 60, parent.id);
       redrawLinks(state);
+      // The new node may not be laid out yet on this frame; redraw once
+      // layout has settled so the connector is always rendered.
+      requestAnimationFrame(() => redrawLinks(state));
     });
+  }
+
+  // Paint a soft radial darkening at each node's centre so the dot grid
+  // appears to sag under the element's "weight".
+  function redrawWeight(state) {
+    const layer = state.weight;
+    if (!layer) return;
+
+    const styles = getComputedStyle(state.canvas);
+    const gridSize =
+      parseFloat(styles.getPropertyValue("--im-grid-size")) || 18;
+    const darkDot =
+      styles.getPropertyValue("--im-grid-weight").trim() || "rgba(0,0,0,0.35)";
+
+    // Same dot geometry as the base grid (1px), darker color only.
+    layer.style.backgroundImage =
+      `radial-gradient(${darkDot} 1px, transparent 1px)`;
+    layer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+    layer.style.backgroundPosition = "0 0";
+
+    const masks = [];
+    for (const node of state.nodes) {
+      const shape = node.el.querySelector(".im-circle, .im-square");
+      if (!shape) continue;
+
+      const cx = node.x + shape.offsetLeft + shape.offsetWidth / 2;
+      const cy = node.y + shape.offsetTop + shape.offsetHeight / 2;
+      const base = Math.max(shape.offsetWidth, shape.offsetHeight) / 2;
+      const radius = base + 90; // halo reach
+      const core = Math.round((base / radius) * 100);
+
+      masks.push(
+        `radial-gradient(circle ${radius}px at ${cx}px ${cy}px, ` +
+          `#000 0%, #000 ${core}%, transparent 100%)`
+      );
+    }
+
+    const mask = masks.join(", ");
+    layer.style.webkitMaskImage = mask || "none";
+    layer.style.maskImage = mask || "none";
+    // When multiple mask layers overlap, take the darkest (union) coverage.
+    layer.style.webkitMaskComposite = "source-over";
+    layer.style.maskComposite = "add";
   }
 })();

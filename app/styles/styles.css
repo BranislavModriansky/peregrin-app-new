@@ -65,8 +65,9 @@
   --im-btn-hover-border: #828282;
   --im-btn-hover-color: #000;
 
-  --im-grid-dot: rgba(0, 0, 0, 0.12);
+  --im-grid-dot: rgba(0, 0, 0, 0.06);
   --im-grid-size: 18px;
+  --im-grid-weight: rgba(0, 0, 0, 0.061); /* darker dots revealed under nodes */
 
   --im-link-stroke: #6d6d6d;
   --im-link-temp-stroke: #949494;
@@ -668,7 +669,7 @@ body.qp-dragging iframe { pointer-events: none; }
   padding-right: 0.6rem;
 }
 
-.panel-content { padding: 0.2rem 0.6rem; }
+.panel-content { padding: 0.2rem 0.6rem; height: 100%; overflow: hidden; }
 
 .static-panel {
   position: relative;
@@ -806,6 +807,20 @@ body.im-modal-open::before {
   position: absolute;
   inset: 0;
   transform-origin: 0 0;
+}
+
+/* Grid "weight" layer: darkens the dot grid beneath/around each node,
+   as if the net sags under the element's weight. Sits above the grid
+   background but below links and nodes. */
+.im-weight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background-repeat: repeat;
 }
 
 .im-links {
