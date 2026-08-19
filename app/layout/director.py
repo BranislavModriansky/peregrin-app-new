@@ -10,7 +10,7 @@ def panel(id: str, title: str, *content):
     return ui.div(
         ui.div(
             ui.div(
-                ui.span("⣿", class_="qp-grip", title="Drag to move"),
+                ui.span("○", class_="qp-grip", title="Drag to move"),
                 ui.span(title, class_="qp-title", **{"data-qp-title": title}),
                 class_="qp-header-left",
             ),

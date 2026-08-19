@@ -43,7 +43,7 @@
   --divider-hover-color: #1a1a1a;
 
   --drop-border: #808080;
-  --drop-bg: rgba(182, 182, 182, 0.651);
+  --drop-bg: rgba(208, 208, 208, 0.651);
 
   --input-panel-gradient: linear-gradient(to bottom, #edf0f2a0, #bdc4cb7a);
   --input-panel-shadow: 0px 2px 10px rgba(225, 225, 225, 0.75);
@@ -437,7 +437,7 @@ bslib-input-dark-mode {
 }
 
 .qp-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.qp-grip { cursor: grab; color: var(--grip-color); font-size: 0.75rem; }
+.qp-grip { cursor: grab; color: var(--grip-color); font-size: 0.85rem; }
 .qp-grip:active { cursor: grabbing; }
 .qp-title {
   font-weight: 600;
@@ -573,14 +573,17 @@ body.qp-resizing iframe { pointer-events: none; }
 .qp-drop-target::after {
   content: "";
   position: absolute;
-  inset: 1px;
-  border: 2px dashed var(--drop-border);
-  border-radius: 0.1rem;
-  background: var(--drop-bg);
+  /* inset: 1px; */
+  /* border: 2px dashed var(--drop-border); */
+  /* border-radius: 0.1rem; */
+  /* background: var(--drop-bg); */
   pointer-events: none;
   z-index: 5;
 }
-.qp-drop-target .qp-panel { border-color: transparent !important; }
+.qp-drop-target .qp-panel { 
+  border-color: black !important;
+  background: var(--drop-bg) !important;
+}
 .qp-drop-target .qp-panel::after { background: none; }
 
 .qp-ghost {
