@@ -15,7 +15,7 @@ output_panel = panel("qp-output", "Explorer", ui.output_ui("explorer_content"))
 
 app_ui = ui.page_sidebar(
     ui.sidebar(
-        "Sidebar",
+        ui.div(),
         position="left",
         open='closed',
         width="16rem",

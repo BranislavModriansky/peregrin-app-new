@@ -59,12 +59,6 @@
     viewport.appendChild(svg);
     state.svg = svg;
 
-    // Grid "weight" overlay — darkens dots beneath nodes.
-    const weight = document.createElement("div");
-    weight.className = "im-weight";
-    viewport.insertBefore(weight, svg); // below links & nodes
-    state.weight = weight;
-
     // Hidden file input reused for all uploads.
     const fileInput = document.createElement("input");
     fileInput.type = "file";
@@ -117,6 +111,14 @@
     zoomOutBtn.textContent = "−";
     zoomOutBtn.addEventListener("click", () => zoomBy(state, 1 / 1.2));
     bar.appendChild(zoomOutBtn);
+
+    const resetBtn = document.createElement("button");
+    resetBtn.type = "button";
+    resetBtn.className = "im-btn im-reset";
+    resetBtn.title = "Reset input manager";
+    resetBtn.textContent = "⟲";
+    resetBtn.addEventListener("click", () => confirmReset(container, state));
+    bar.appendChild(resetBtn);
 
     const fullBtn = document.createElement("button");
     fullBtn.type = "button";
@@ -187,10 +189,21 @@
     const shapeClass = isInput ? "im-circle" : "im-square";
     const editable = isInput ? "" : 'contenteditable="true"';
 
+    const plugIcon = `
+      <svg class="im-plug-icon" viewBox="0 0 24 24" width="30" height="30"
+           fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 2v6"/>
+        <path d="M15 2v6"/>
+        <path d="M6 8h12v4a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/>
+        <path d="M12 18v4"/>
+      </svg>
+    `;
+
     el.innerHTML = `
       <div class="${shapeClass}" title="Click or drop files to import">
         ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
-        ${isInput ? '<span class="im-plus">+</span>' : ""}
+        ${isInput ? plugIcon : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}</div>
         <div class="im-node-files"></div>
         <div class="im-port im-port-out" title="Add a child element">
@@ -278,7 +291,7 @@
       e.stopPropagation();
       const nodeEl = x.closest(".im-node");
       const node = findNode(state, nodeEl.dataset.id);
-      if (node) removeNode(state, node);
+      if (node) confirmRemove(container, state, node);
     });
 
     // Click shape -> open file dialog.
@@ -601,8 +614,6 @@
       handle.dataset.childId = node.id;
       svg.appendChild(handle);
     });
-
-    redrawWeight(state);
   }
   // Paint a soft radial darkening at each node's centre so the dot grid
   // appears to sag under the element's "weight".
@@ -824,7 +835,8 @@
       const childType = childLevelOf(parent.type);
       if (!childType) return; // terminal level
 
-      addNode(state, childType, parent.x + 180, parent.y + 60, parent.id);
+      const pos = childSpawnPos(state, parent);
+      addNode(state, childType, pos.x, pos.y, parent.id);
       redrawLinks(state);
       // The new node may not be laid out yet on this frame; redraw once
       // layout has settled so the connector is always rendered.
@@ -873,5 +885,127 @@
     // When multiple mask layers overlap, take the darkest (union) coverage.
     layer.style.webkitMaskComposite = "source-over";
     layer.style.maskComposite = "add";
+  }
+
+  /* ---------- Child spawn placement ---------- */
+
+  // Find a spot to the right of the parent that isn't (almost) exactly on
+  // top of an existing node. Cheap: tries a small fixed list of candidate
+  // slots and does simple distance checks — no collision physics.
+  const SPAWN_DX = 220;          // horizontal gap from parent
+  const SPAWN_STEP = 70;         // vertical spacing between candidate slots
+  const SPAWN_MIN_DIST = 55;     // "too close" threshold (partial overlap OK)
+
+  function childSpawnPos(state, parent) {
+    const baseX = parent.x + SPAWN_DX;
+    const baseY = parent.y;
+
+    // Candidate vertical offsets: 0, +1, -1, +2, -2, ... (up to 8 slots).
+    for (let i = 0; i < 8; i++) {
+      const offset = (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * SPAWN_STEP;
+      const x = baseX + (i > 3 ? 40 : 0); // shift a 2nd column if crowded
+      const y = baseY + offset;
+
+      const tooClose = state.nodes.some((n) => {
+        const dx = n.x - x;
+        const dy = n.y - y;
+        return dx * dx + dy * dy < SPAWN_MIN_DIST * SPAWN_MIN_DIST;
+      });
+      if (!tooClose) return { x, y };
+    }
+    // All slots busy: fall back with a slight stagger so it's never exact.
+    return { x: baseX + 30, y: baseY + 25 };
+  }
+
+  function confirmRemove(container, state, node) {
+    // Only one dialog at a time.
+    if (container.querySelector(".im-confirm-overlay")) return;
+
+    const hasChildren = state.nodes.some((n) => n.parentId === node.id);
+
+    const overlay = document.createElement("div");
+    overlay.className = "im-confirm-overlay";
+    overlay.innerHTML = `
+      <div class="im-confirm-box" role="dialog" aria-modal="true">
+        <div class="im-confirm-title">Remove "${node.name}"?</div>
+        <div class="im-confirm-msg">
+          This will remove the ${node.type}${hasChildren
+            ? " and all of its child elements" : ""}. This cannot be undone.
+        </div>
+        <div class="im-confirm-actions">
+          <button type="button" class="im-btn im-confirm-cancel">Cancel</button>
+          <button type="button" class="im-btn im-confirm-ok">Remove</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(); // click outside cancels
+    });
+    overlay.querySelector(".im-confirm-cancel").addEventListener("click", close);
+    overlay.querySelector(".im-confirm-ok").addEventListener("click", () => {
+      close();
+      removeNode(state, node);
+    });
+
+    document.addEventListener("keydown", function esc(e) {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+    });
+  }
+
+  function resetManager(state) {
+    // Remove every node from the DOM and state.
+    state.nodes.forEach((n) => n.el.remove());
+    state.nodes = [];
+
+    // Restore the default layout: root input + locked default set.
+    const input = addNode(state, "input", 40, 40, null);
+    const defaultSet = addNode(state, "set", 260, 60, input.id, false);
+    defaultSet.locked = true;
+    defaultSet.el.classList.add("im-locked");
+
+    resetPan(state);
+    redrawLinks(state);
+
+    if (window.Shiny && Shiny.setInputValue) {
+      Shiny.setInputValue("input_manager_reset", Date.now(), { priority: "event" });
+    }
+  }
+
+  function confirmReset(container, state) {
+    if (container.querySelector(".im-confirm-overlay")) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "im-confirm-overlay";
+    overlay.innerHTML = `
+      <div class="im-confirm-box" role="dialog" aria-modal="true">
+        <div class="im-confirm-title">Reset input manager?</div>
+        <div class="im-confirm-msg">
+          This will remove all elements and imported files, restoring the
+          default layout. This cannot be undone.
+        </div>
+        <div class="im-confirm-actions">
+          <button type="button" class="im-btn im-confirm-cancel">Cancel</button>
+          <button type="button" class="im-btn im-confirm-ok">Reset</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    overlay.querySelector(".im-confirm-cancel").addEventListener("click", close);
+    overlay.querySelector(".im-confirm-ok").addEventListener("click", () => {
+      close();
+      resetManager(state);
+    });
+
+    document.addEventListener("keydown", function esc(e) {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+    });
   }
 })();
