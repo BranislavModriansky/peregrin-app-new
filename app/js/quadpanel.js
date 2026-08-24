@@ -31,6 +31,7 @@
     };
 
     applyFractions(grid, state);
+    grid.__qpState = state;
     buildNavbar(root, grid, state);
     wireButtons(root, grid, state);
     wireResizers(grid, state);
@@ -48,14 +49,20 @@
       positionCorners(grid, state);
     });
 
-    // Position the corners after the grid has actually been laid out.
-    const settle = (tries) => {
-      positionCorners(grid, state);
-      if (grid.getBoundingClientRect().width < 1 && tries > 0) {
-        requestAnimationFrame(() => settle(tries - 1));
-      }
-    };
-    requestAnimationFrame(() => settle(30));
+    // Re-position the corners whenever the grid or its columns change size.
+    // This covers initial layout (whenever it happens), Shiny renders, font
+    // loads, collapse/expand — no retry loop needed.
+    const ro = new ResizeObserver(() => positionCorners(grid, state));
+    ro.observe(grid);
+    const leftColEl = grid.querySelector("#qp-col-left");
+    const rightColEl = grid.querySelector("#qp-col-right");
+    if (leftColEl) ro.observe(leftColEl);
+    if (rightColEl) ro.observe(rightColEl);
+
+    // Also re-position once fonts/images/shiny outputs finish loading, since
+    // those can change column heights after the initial settle completes.
+    window.addEventListener("load", () => positionCorners(grid, state));
+    document.addEventListener("shiny:idle", () => positionCorners(grid, state));
   }
 
   /* ---------- Sizing ---------- */
@@ -151,24 +158,38 @@
     const gridRect = grid.getBoundingClientRect();
     const leftCol = grid.querySelector("#qp-col-left");
     const rightCol = grid.querySelector("#qp-col-right");
-    if (!leftCol || !rightCol) return;
+    const vDiv = grid.querySelector("#qp-divider-v");
+    if (!leftCol || !rightCol || !vDiv) return;
 
-    const place = (corner, colEl, rowFrac) => {
+    // X = the vertical divider's actual center (accounts for its width).
+    const vRect = vDiv.getBoundingClientRect();
+    const x = (vRect.left - gridRect.left) + vRect.width / 2;
+
+    const place = (corner, colEl) => {
       if (!corner) return;
+      // Hide the corner when this column has a collapsed slot: its horizontal
+      // divider is hidden and the row split no longer applies.
+      if (colEl.classList.contains("qp-col-collapsed")) {
+        corner.style.visibility = "hidden";
+        return;
+      }
+      const hDiv = colEl.querySelector(".qp-divider-h");
       const colRect = colEl.getBoundingClientRect();
-      if (gridRect.width < 1 || colRect.height < 1) {
+      if (!hDiv || gridRect.width < 1 || colRect.height < 1) {
         corner.style.visibility = "hidden";
         return;
       }
       corner.style.visibility = "visible";
-      const x = state.colFrac * gridRect.width;
-      const y = (colRect.top - gridRect.top) + rowFrac * colRect.height;
+      // Y = the horizontal divider's actual center (accounts for its height),
+      // not rowFrac * colHeight which ignores the divider's own thickness.
+      const hRect = hDiv.getBoundingClientRect();
+      const y = (hRect.top - gridRect.top) + hRect.height / 2;
       corner.style.left = x + "px";
       corner.style.top = y + "px";
     };
 
-    place(grid.querySelector("#qp-divider-corner-left"), leftCol, state.rowLeft);
-    place(grid.querySelector("#qp-divider-corner-right"), rightCol, state.rowRight);
+    place(grid.querySelector("#qp-divider-corner-left"), leftCol);
+    place(grid.querySelector("#qp-divider-corner-right"), rightCol);
   }
 
   function bind(el, handler) {
@@ -228,7 +249,10 @@
 
     // Nudge Shiny/browser to (re)bind & size any outputs revealed on expand.
     if (!collapse) nudgeShiny(slot);
-    syncHeaders(slot.closest(".qp-grid"));
+    const grid = slot.closest(".qp-grid");
+    syncHeaders(grid);
+    // Corners depend on collapse state / column heights; re-evaluate them.
+    if (grid && grid.__qpState) positionCorners(grid, grid.__qpState);
   }
 
   /* ---------- Maximize -> single-panel navbar view ---------- */
