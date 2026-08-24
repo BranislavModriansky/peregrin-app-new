@@ -43,7 +43,19 @@
     const consoleSlot = grid.querySelector('#qp-col-left .qp-slot:last-child');
     if (consoleSlot) toggleCollapse(consoleSlot);
 
-    window.addEventListener("resize", () => applyFractions(grid, state));
+    window.addEventListener("resize", () => {
+      applyFractions(grid, state);
+      positionCorners(grid, state);
+    });
+
+    // Position the corners after the grid has actually been laid out.
+    const settle = (tries) => {
+      positionCorners(grid, state);
+      if (grid.getBoundingClientRect().width < 1 && tries > 0) {
+        requestAnimationFrame(() => settle(tries - 1));
+      }
+    };
+    requestAnimationFrame(() => settle(30));
   }
 
   /* ---------- Sizing ---------- */
@@ -59,6 +71,8 @@
 
   function wireResizers(grid, state) {
     const vDiv = grid.querySelector("#qp-divider-v");
+    const cornerLeft = grid.querySelector("#qp-divider-corner-left");
+    const cornerRight = grid.querySelector("#qp-divider-corner-right");
     const leftCol = grid.querySelector("#qp-col-left");
     const rightCol = grid.querySelector("#qp-col-right");
     const hLeft = leftCol.querySelector(".qp-divider-h");
@@ -72,6 +86,7 @@
         const p = ev.touches ? ev.touches[0] : ev;
         state.colFrac = clamp((p.clientX - rect.left) / rect.width, 0.15, 0.85);
         applyFractions(grid, state);
+        positionCorners(grid, state);
       };
       startDrag(move);
     };
@@ -86,6 +101,34 @@
         const p = ev.touches ? ev.touches[0] : ev;
         state[key] = clamp((p.clientY - rect.top) / rect.height, 0.1, 0.9);
         applyFractions(grid, state);
+        positionCorners(grid, state);
+      };
+      startDrag(move);
+    };
+
+    // Corner for a single column: resize horizontally (colFrac) and that
+    // column's row split vertically. The other column is left untouched.
+    const dragCorner = (e, col) => {
+      if (state.maximized) return;
+      e.preventDefault();
+      const gridRect = grid.getBoundingClientRect();
+      const colEl = col === "left" ? leftCol : rightCol;
+      const colRect = colEl.getBoundingClientRect();
+      const key = col === "left" ? "rowLeft" : "rowRight";
+      const move = (ev) => {
+        const p = ev.touches ? ev.touches[0] : ev;
+        state.colFrac = clamp(
+          (p.clientX - gridRect.left) / gridRect.width,
+          0.15,
+          0.85
+        );
+        state[key] = clamp(
+          (p.clientY - colRect.top) / colRect.height,
+          0.1,
+          0.9
+        );
+        applyFractions(grid, state);
+        positionCorners(grid, state);
       };
       startDrag(move);
     };
@@ -93,6 +136,39 @@
     bind(vDiv, dragV);
     bind(hLeft, (e) => dragH(e, "left"));
     bind(hRight, (e) => dragH(e, "right"));
+    if (cornerLeft) bind(cornerLeft, (e) => dragCorner(e, "left"));
+    if (cornerRight) bind(cornerRight, (e) => dragCorner(e, "right"));
+
+    // Initial placement + keep in sync on resize.
+    positionCorners(grid, state);
+    window.addEventListener("resize", () => positionCorners(grid, state));
+  }
+
+  // Place each corner handle at the vertical divider's X, using its own
+  // column's row split for the Y position.
+  function positionCorners(grid, state) {
+    if (state.maximized) return;
+    const gridRect = grid.getBoundingClientRect();
+    const leftCol = grid.querySelector("#qp-col-left");
+    const rightCol = grid.querySelector("#qp-col-right");
+    if (!leftCol || !rightCol) return;
+
+    const place = (corner, colEl, rowFrac) => {
+      if (!corner) return;
+      const colRect = colEl.getBoundingClientRect();
+      if (gridRect.width < 1 || colRect.height < 1) {
+        corner.style.visibility = "hidden";
+        return;
+      }
+      corner.style.visibility = "visible";
+      const x = state.colFrac * gridRect.width;
+      const y = (colRect.top - gridRect.top) + rowFrac * colRect.height;
+      corner.style.left = x + "px";
+      corner.style.top = y + "px";
+    };
+
+    place(grid.querySelector("#qp-divider-corner-left"), leftCol, state.rowLeft);
+    place(grid.querySelector("#qp-divider-corner-right"), rightCol, state.rowRight);
   }
 
   function bind(el, handler) {

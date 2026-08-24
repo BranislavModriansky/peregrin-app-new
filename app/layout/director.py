@@ -43,16 +43,19 @@ def quad_layout(top_left, top_right, bottom_left, bottom_right):
     return ui.div(
         # Navbar shown only in single-panel (maximized) mode.
         ui.div(
-            ui.tags.button(
-                ui.HTML("&#8862;"),
-                None,
-                class_="qp-nav-back qp-btn",
-                type="button",
-                title="Back to 4-panel view",
+            ui.div(
+                ui.tags.button(
+                    ui.HTML("&#8862;"),
+                    None,
+                    class_="qp-nav-back qp-btn",
+                    type="button",
+                    title="Back to 4-panel view",
+                ),
+                ui.div(class_="qp-nav-links", id="qp-nav-links"),
+                class_="qp-navbar",
+                id="qp-navbar",
             ),
-            ui.div(class_="qp-nav-links", id="qp-nav-links"),
-            class_="qp-navbar",
-            id="qp-navbar",
+            class_="qp-navbar-container"
         ),
         ui.div(
             # Left column: two stacked slots + horizontal divider.
@@ -66,6 +69,12 @@ def quad_layout(top_left, top_right, bottom_left, bottom_right):
             ),
             # Single shared vertical divider.
             ui.div(class_="qp-divider qp-divider-v", id="qp-divider-v"),
+            # Corner handles where the vertical divider meets each column's
+            # horizontal divider (left + right).
+            ui.div(class_="qp-divider-corner", id="qp-divider-corner-left",
+                   **{"data-col": "left"}),
+            ui.div(class_="qp-divider-corner", id="qp-divider-corner-right",
+                   **{"data-col": "right"}),
             # Right column.
             ui.div(
                 ui.div(top_right, class_="qp-slot", id="qp-slot-tr", **{"data-slot": "tr", "data-qp-title": "Filters"}),
