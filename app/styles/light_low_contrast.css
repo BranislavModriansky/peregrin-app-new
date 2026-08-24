@@ -41,7 +41,8 @@ body::after {
   inset: -50%;
   z-index: -1;
   pointer-events: none;
-  background: repeating-conic-gradient(
+  background: var(--bg);
+  /* background: repeating-conic-gradient(
     from 0deg at 30% 20%,
     #05050510 0deg,
     #05050505 25deg,
@@ -49,13 +50,15 @@ body::after {
     var(--bg) 75deg,
     #05050515 100deg
   );
-  filter: blur(40px) url(#grain);
+  filter: blur(40px) url(#grain); */
 }
 
-body::after {
-  transform: rotate(180deg); /* mirrors the same conic from the opposite corner */
-  mix-blend-mode: screen;   /* try 'difference' or 'overlay' too */
-}
+/* body::after { */
+  /* mirrors the same conic from the opposite corner */
+  /* transform: rotate(180deg); */
+  /* try 'difference' or 'overlay' too */ 
+  /* mix-blend-mode: screen; */
+/* } */
 
 
 

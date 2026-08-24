@@ -7,7 +7,7 @@
 
 /* ===== Fallback variable defaults (mirrors light_low_contrast) ===== */
 :root {
-  --bg: #fff;
+  --bg: #fafafa;
   --panel-bg: #eceef1;
   --c-1: #d7d7df;
   --border: #e5e7eb;
@@ -17,6 +17,8 @@
   --orb-color: 141, 204, 143;
   --grid-color: rgba(248, 248, 248, 0);
   --grid-size: 6px;
+
+  --navbar-height: 4.4rem;
 
   --s: 15px;
   --side-gap: 1px;
@@ -40,7 +42,8 @@
   --btn-hover-bg: #e2e5e9;
   --btn-hover-color: #202124;
 
-  --divider-hover-color: #1a1a1a;
+  --divider-hover-color: #6b6b6b;
+  --divider-hold-color: #1a1a1a;
 
   --drop-border: #808080;
   --drop-bg: rgba(208, 208, 208, 0.651);
@@ -132,12 +135,7 @@ body::after {
   inset: -50%;
   z-index: -1;
   pointer-events: none;
-  background: var(--body-conic-gradient);
-  filter: blur(40px) url(#grain);
-}
-body::after {
-  transform: rotate(180deg);
-  mix-blend-mode: screen;
+  background: var(--bg);
 }
 
 .main {
@@ -148,8 +146,10 @@ body::after {
 .navbar {
   background-color: transparent !important;
   border: none !important;
-  height: 3rem !important;
-  padding-bottom: 0.2rem !important;
+  height: var(--navbar-height) !important;
+  padding-bottom: 0 !important;
+  padding-top: 0.6rem !important;
+  gap: 0 5rem;
 }
 
 .sidebar {
@@ -157,17 +157,46 @@ body::after {
 }
 
 a.nav-link,
-a.nav-link:hover,
-a.nav-link.active {
+a.nav-link:hover {
   border-bottom: none !important;
   border-radius: 0 !important;
   font-weight: 600 !important;
-  font-size: 1rem !important;
+  font-size: 1.1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+a.nav-link.active {
+  border-radius: 0 !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  border-bottom: none !important;
+  position: relative !important;
+}
+a.nav-link.active::after {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  right: 0.35rem;
+  /* Position the underline just below the text instead of the link's bottom edge */
+  top: calc(50% + 1rem);
+  height: 2px;
+  background: var(--nav-active-color);
+}
+li.nav-item {
+  margin-right: 0.2rem;
+  margin-left: 0.4rem;
+}
+li.nav-item:last-child {
+  margin-right: 0rem;
 }
 
 .app-title {
   font-weight: 600 !important;
-  font-size: 1.45rem !important;
+  font-size: 1.6rem !important;
   color: var(--color-secondary) !important;
   text-decoration: none !important;
 }
@@ -187,7 +216,7 @@ bslib-input-dark-mode {
 
 /* ===== Quad-panel root ===== */
 .qp-root {
-  height: calc(100vh - 4.25rem);
+  height: calc(100vh - 6rem);
   padding: 0;
   box-sizing: border-box;
   display: flex;
@@ -200,7 +229,7 @@ bslib-input-dark-mode {
   position: relative;
   align-items: left;
   gap: 12px;
-  padding: 0 0.6rem;
+  padding: 0.8rem;
   background: transparent;
   margin-bottom: 0.6rem;
   border-bottom: none;
@@ -211,13 +240,13 @@ bslib-input-dark-mode {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  /* gap: 0.15rem; */
   position: absolute;
-  top: 2.85rem;
-  right: 0;
+  top: 4.6rem;
+  left: 4rem;
   bottom: 0;
-  width: 9rem;
-  padding: 0.2rem;
+  width: 7rem;
+  padding: 0.8rem;
+  padding-right: 0 !important;
   z-index: 5;
   background: transparent;
   border-radius: 0;
@@ -258,13 +287,12 @@ bslib-input-dark-mode {
   bottom: 0.4rem;
   width: 2px;
   height: auto;
-  background: var(--nav-active-color);
-  border-radius: 2px;
+  /* background: var(--nav-active-color); */
 }
 
 /* Back button styled like a subtle icon control */
 .qp-nav-back {
-  order: -1 !important;
+  order: 10 !important;
   width: 1.875rem;
   height: 1.875rem;
   font-size: 1rem;
@@ -349,6 +377,15 @@ bslib-input-dark-mode {
   margin-top: 1.875rem;
 }
 
+/* When both top panels are collapsed, remove the reserved header space so
+   they sit flush against the top under the navbar. */
+.qp-grid:has(#qp-slot-tl.qp-collapsed):has(#qp-slot-tr.qp-collapsed)
+  #qp-slot-tl,
+.qp-grid:has(#qp-slot-tl.qp-collapsed):has(#qp-slot-tr.qp-collapsed)
+  #qp-slot-tr {
+  margin-top: 0 !important;
+}
+
 .qp-col-collapsed > .qp-divider-h { visibility: hidden; }
 .qp-col-collapsed > .qp-slot:not(.qp-collapsed) { flex: 1 1 auto !important; }
 
@@ -371,7 +408,6 @@ bslib-input-dark-mode {
     conic-gradient(at var(--s) var(--s), transparent 75%, #000 0)
       0 0 / calc(100% - var(--s)) calc(100% - var(--s));
   overflow: hidden;
-  box-shadow: 0 0 16px -10px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
 }
 
@@ -417,7 +453,7 @@ bslib-input-dark-mode {
   left: 0;
   right: 0;
   padding-top: 0.15rem;
-  padding-bottom: 0.2rem;
+  padding-bottom: 0.1rem;
   padding-left: 0.45rem;
   padding-right: 0.55rem;
   background: transparent;
@@ -437,7 +473,7 @@ bslib-input-dark-mode {
 }
 
 .qp-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.qp-grip { cursor: grab; color: var(--grip-color); font-size: 0.85rem; }
+.qp-grip { cursor: grab; color: var(--grip-color); font-size: 0.85rem; align-self: center; }
 .qp-grip:active { cursor: grabbing; }
 .qp-title {
   font-weight: 600;
@@ -472,23 +508,35 @@ bslib-input-dark-mode {
   z-index: 15;
   flex: 0 0 auto;
 }
-.qp-divider-v { width: 0.6rem; cursor: col-resize; align-self: stretch; }
+.qp-divider-v { width: 0.8rem; cursor: col-resize; align-self: stretch; }
 .qp-divider-h { height: 0.6rem; cursor: row-resize; }
 .qp-divider-v:hover {
-  background-image: linear-gradient(
-    to right,
-    transparent 0 0.2374rem,
-    var(--divider-hover-color) 0.2375rem 0.3625rem,
-    transparent 0.3626rem 0.6rem
-  );
+  background-image:
+    linear-gradient(to right, var(--divider-hover-color), var(--divider-hover-color));
+  background-repeat: no-repeat;
+  background-size: 2px 100%;
+  background-position: center;
 }
 .qp-divider-h:hover {
-  background-image: linear-gradient(
-    to bottom,
-    transparent 0 0.2374rem,
-    var(--divider-hover-color) 0.2375rem 0.3625rem,
-    transparent 0.3626rem 0.6rem
-  );
+  background-image:
+    linear-gradient(to bottom, var(--divider-hover-color), var(--divider-hover-color));
+  background-repeat: no-repeat;
+  background-size: 100% 2px;
+  background-position: center;
+}
+.qp-divider-v:active {
+  background-image:
+    linear-gradient(to right, var(--divider-hold-color), var(--divider-hold-color));
+  background-repeat: no-repeat;
+  background-size: 2px 100%;
+  background-position: center;
+}
+.qp-divider-h:active {
+  background-image:
+    linear-gradient(to bottom, var(--divider-hold-color), var(--divider-hold-color));
+  background-repeat: no-repeat;
+  background-size: 100% 2px;
+  background-position: center;
 }
 
 body.qp-resizing { cursor: grabbing; user-select: none; }
@@ -499,16 +547,15 @@ body.qp-resizing iframe { pointer-events: none; }
   display: block;
   position: relative;
   border: transparent;
-  /* Reserve room for the right-hand nav column. */
-  padding-right: 9rem;
 }
 .qp-single-mode .qp-divider { display: none; }
 .qp-single-mode .qp-col { display: contents; flex: 1 1 auto; }
 
 .qp-single-mode .qp-slot {
   position: absolute;
-  inset: 0 9rem 0 0;
+  inset: 0 0 0 7rem;
   opacity: 0;
+  /* padding-top: 1.9rem; */
   pointer-events: none;
 }
 .qp-single-mode .qp-slot.qp-active-slot {
@@ -529,12 +576,12 @@ body.qp-resizing iframe { pointer-events: none; }
   height: 100% !important;
   border: 0.13rem solid var(--panel-border-color) !important;
   border-radius: 0;
-  box-shadow: 0 0 16px -10px rgba(0, 0, 0, 0.5);
   background: var(--panel-bg) content-box;
   mask:
     conic-gradient(#000 0 0) content-box,
-    conic-gradient(at var(--s) var(--s), transparent 75%, #000 0)
-      0 0 / calc(100% - var(--s)) calc(100% - var(--s));
+    linear-gradient(#000 0 0) top right    / var(--s) var(--s) no-repeat,
+    linear-gradient(#000 0 0) bottom right / var(--s) var(--s) no-repeat,
+    linear-gradient(#000 0 0) bottom left  / var(--s) var(--s) no-repeat;
   overflow: hidden;
 }
 .qp-single-mode .qp-active-slot > .qp-panel::after {
@@ -544,9 +591,9 @@ body.qp-resizing iframe { pointer-events: none; }
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat center top / calc(100% - (var(--s) + var(--side-gap)) * 2) 1px,
+    linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat left top / calc(100% - (var(--s) + var(--side-gap))) 1px,
     linear-gradient(to right, var(--panel-border-color), var(--panel-border-color)) no-repeat center bottom / calc(100% - (var(--s) + var(--side-gap)) * 2) 1px,
-    linear-gradient(to bottom, var(--panel-border-color), var(--panel-border-color)) no-repeat left center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2),
+    linear-gradient(to bottom, transparent 0%, transparent 10%, var(--panel-border-color) 35%) no-repeat left center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2),
     linear-gradient(to bottom, var(--panel-border-color), var(--panel-border-color)) no-repeat right center / 1px calc(100% - (var(--s) + var(--side-gap)) * 2);
 }
 
@@ -555,7 +602,6 @@ body.qp-resizing iframe { pointer-events: none; }
   overflow: auto;
   min-height: 0;
   border: transparent;
-  padding: 0.2rem 0.6rem;
 }
 
 /* --- Drag & drop --- */
@@ -652,7 +698,6 @@ body.qp-dragging iframe { pointer-events: none; }
   border: none !important;
   border-top-right-radius: 1rem !important;
   border-bottom-right-radius: 1rem !important;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
   z-index: 900 !important;
 }
 
@@ -665,11 +710,10 @@ body.qp-dragging iframe { pointer-events: none; }
 .menu-grid {
   display: grid;
   grid-template-columns: 45% 55%;
-  height: calc(100vh - 3rem);
+  height: calc(100vh - var(--navbar-height) - 0.6rem);
   width: 100%;
   padding-top: 0 !important;
-  padding-bottom: 0.8rem;
-  padding-right: 0.6rem;
+  padding-right: 0.2rem;
 }
 
 .panel-content { padding: 0.2rem 0.6rem; height: 100%; overflow: hidden; }
@@ -679,8 +723,8 @@ body.qp-dragging iframe { pointer-events: none; }
   display: flex;
   flex-direction: column;
   padding: 0;
-  margin-top: 0.6rem;
-  margin-left: 0.6rem;
+  margin-top: 0.8rem;
+  margin-left: 0.8rem;
   border: 0.13rem solid var(--panel-border-color) !important;
   background: var(--panel-bg) content-box;
   mask:
@@ -709,7 +753,7 @@ body.qp-dragging iframe { pointer-events: none; }
 }
 .html-fill-container[data-value="Workspace"] {
   margin: 0 !important;
-  padding: 0.6rem !important;
+  padding: 0.8rem !important;
   border: none !important;
 }
 
