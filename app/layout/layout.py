@@ -21,6 +21,7 @@ app_ui = ui.page_sidebar(
         width="16rem",
     ),
     ui.div(
+        ui.busy_indicators.use(spinners=True, pulse=False, fade=True),
         ui.input_action_button("anim_toggle", "⦽", class_="anim-toggle"),
         ui.input_action_button("theme_toggle", "◑", class_="theme-toggle"),
         class_="sidebar-buttons",

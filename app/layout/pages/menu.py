@@ -30,8 +30,12 @@ menu_content = ui.div(
             ),
             ui.div(
                 ui.div(
-                    ui.output_ui("memory_usage_panel"),
-                    class_="panel-content"
+                    ui.div(class_="memory-usage-buttons"),
+                    ui.div(
+                        ui.output_ui("memory_usage_graph"),
+                        class_="memory-usage-graph"
+                    ),
+                    class_="panel-content memory-usage-panel-content"
                 ),
                 class_="static-panel memory-usage-panel",
             ),
