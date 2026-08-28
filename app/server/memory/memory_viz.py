@@ -140,21 +140,21 @@ class LiveCPU:
     # ------------------------------------------------------------------ #
     def _build_chart(self):
         fig, ax = plt.subplots(
-            figsize=(4.5, 3),
+            figsize=(3.5, 3),
             constrained_layout=self.kw.get('constrained_layout', True),
             dpi=self.kw.get('dpi', 100)
         )
 
-        cpu_line, = ax.plot([], [],
-                            color=self.kw.get('cpu_c', 'darkgrey'),
-                            linewidth=self.kw.get('cpu_linewidth', 1),
-                            linestyle=self.kw.get('cpu_linestyle', '--'),
-                            label='CPU')
         ram_line, = ax.plot([], [],
                             color=self.kw.get('ram_c', 'black'),
                             linewidth=self.kw.get('ram_linewidth', 2),
                             linestyle=self.kw.get('ram_linestyle', '-'),
                             label='RAM')
+        cpu_line, = ax.plot([], [],
+                            color=self.kw.get('cpu_c', 'darkgrey'),
+                            linewidth=self.kw.get('cpu_linewidth', 1),
+                            linestyle=self.kw.get('cpu_linestyle', '--'),
+                            label='CPU')
 
         ax.set_ylim(0, 100)
         ax.grid(True, alpha=0.3)
@@ -200,16 +200,16 @@ class LiveCPU:
         # Advance time by the caller's expected polling interval (in seconds)
         self._history_state['t'] += self.kw.get('step', 1)
 
-        c['cpu_line'].set_data(self._time_history, self._cpu_history)
         c['ram_line'].set_data(self._time_history, self._ram_history)
+        c['cpu_line'].set_data(self._time_history, self._cpu_history)
 
         x_max = max(t, window)
         x_min = x_max - window
         c['ax'].set_xlim(x_min, x_max)
 
         if self.kw.get('show_legend', True):
-            c['cpu_line'].set_label(f'CPU {cpu}%')
             c['ram_line'].set_label(f'RAM {ram}%')
+            c['cpu_line'].set_label(f'CPU {cpu}%')
             c['legend'] = c['ax'].legend(loc='best')
 
         return c['fig']
