@@ -11,29 +11,20 @@
 /* ===== Font definitions ===== */
 @font-face {
   font-family: "Geist";
-  src: url("./geist-font/Geist/variable/Geist[wght].ttf") format("truetype-variations"),
-       url("./geist-font/Geist/variable/Geist[wght].ttf") format("truetype");
+  src: local("./geist-font/Geist/variable/Geist[wght].ttf") format("truetype-variations"),
+       local("./geist-font/Geist/variable/Geist[wght].ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Geist Mono";
-  src: url("./geist-font/GeistMono/variable/GeistMono[wght].ttf") format("truetype-variations"),
-       url("./geist-font/GeistMono/variable/GeistMono[wght].ttf") format("truetype");
+  src: local("./geist-font/GeistMono/variable/GeistMono[wght].ttf") format("truetype-variations"),
+       local("./geist-font/GeistMono/variable/GeistMono[wght].ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Geist Pixel";
-  src: url("./geist-font/GeistPixel/variable/GeistPixel[ELSH].ttf") format("truetype-variations"),
-       url("./geist-font/GeistPixel/variable/GeistPixel[ELSH].ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 /* ===== Fallback variable defaults (mirrors light_low_contrast) ===== */
@@ -170,6 +161,7 @@ body::after {
 .main {
   padding: 0 !important;
   margin: 0 !important;
+  gap: 0 !important;
 }
 
 .navbar {
@@ -180,6 +172,7 @@ body::after {
   padding-top: 0.6rem !important;
   gap: 0 5rem;
 }
+
 
 .sidebar {
   border-right: 1px solid var(--c-1) !important;
