@@ -1,37 +1,4 @@
-/*
- * Default styles — structure & layout only.
- * All colors, gradients and theme-specific values come from CSS variables,
- * injected onto :root by theme-manager.js from a JSON theme file.
- * Fallback values keep the UI usable if no theme is loaded.
- *
- * Refactor: all panels use a simple 1px border with a shared 0.8rem
- * border-radius (--radius). Corner masks and gradient border tricks removed.
- */
-
-/* ===== Font definitions ===== */
-@font-face {
-  font-family: "Geist";
-  src: local("./geist-font/Geist/variable/Geist[wght].ttf") format("truetype-variations"),
-       local("./geist-font/Geist/variable/Geist[wght].ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Geist Mono";
-  src: local("./geist-font/GeistMono/variable/GeistMono[wght].ttf") format("truetype-variations"),
-       local("./geist-font/GeistMono/variable/GeistMono[wght].ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* ===== Fallback variable defaults (mirrors light_low_contrast) ===== */
 :root {
-  --font-family-base: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-family-mono: "Geist Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-family-pixel: "Geist Pixel", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --bg: #fefefe;
   --panel-bg: #f1f1f1;
@@ -129,7 +96,7 @@
   --im-remove-color: #fff;
 }
 
-/* ===== Base / helpers ===== */
+
 .invisible-injector {
   content: "";
   position: absolute;
@@ -142,26 +109,29 @@
 }
 
 body {
-  font-family: var(--font-family-base);
   background: var(--bg) !important;
   position: relative;
   overflow-x: hidden;
-}
-
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: -50%;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--bg);
 }
 
 .main {
   padding: 0 !important;
   margin: 0 !important;
   gap: 0 !important;
+}
+
+.bslib-sidebar-layout.sidebar-collapsed {
+  grid-template-columns: 4rem 1fr !important;
+}
+.bslib-sidebar-layout.sidebar-collapsed > .sidebar {
+  width: 4rem !important;
+  max-width: 4rem !important;
+  display: block !important;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+.bslib-sidebar-layout.sidebar-collapsed > .sidebar > *:not(.collapse-toggle) {
+  display: none !important;
 }
 
 .navbar {
@@ -172,12 +142,6 @@ body::after {
   padding-top: 0.6rem !important;
   gap: 0 5rem;
 }
-
-
-.sidebar {
-  border-right: 1px solid var(--c-1) !important;
-}
-
 a.nav-link,
 a.nav-link:hover {
   border-bottom: none !important;
@@ -235,6 +199,9 @@ bslib-input-dark-mode {
   font-size: 0.8rem !important;
   margin-top: 0.4rem !important;
 }
+
+
+
 
 /* ===== Quad-panel root ===== */
 .qp-root {
@@ -621,20 +588,7 @@ body.qp-dragging iframe { pointer-events: none; }
 ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 0.25rem; }
 ::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
 
-/* ===== Sidebar (collapsible) ===== */
-.bslib-sidebar-layout.sidebar-collapsed {
-  grid-template-columns: 4rem 1fr !important;
-}
-.bslib-sidebar-layout.sidebar-collapsed > .sidebar {
-  width: 4rem !important;
-  max-width: 4rem !important;
-  display: block !important;
-  overflow: hidden;
-  border-right: 1px solid var(--border);
-}
-.bslib-sidebar-layout.sidebar-collapsed > .sidebar > *:not(.collapse-toggle) {
-  display: none !important;
-}
+
 
 .collapse-toggle,
 .anim-toggle,

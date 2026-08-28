@@ -31,19 +31,19 @@ def server(input, output, session):
         await session.send_custom_message("set-theme", {"name": _current_theme_name()})
     count = reactive.Value(0)
 
-    @reactive.calc
-    def theme():
+    # @reactive.calc
+    # def theme():
 
-        @output(id="dynamic_theme")
-        @render.ui
-        def dynamic_theme():
-            if input.lightmode() == 'dark':
-                theme = "dark_" + themes[count.get()]
-            else:
-                theme = "light_" + themes[count.get()]
-            # css_text = (path_to_css / theme).read_text()
-            # return ui.tags.style(css_text)
-            return ui.include_css(path_to_css / theme, method="inline")
+    #     @output(id="dynamic_theme")
+    #     @render.ui
+    #     def dynamic_theme():
+    #         if input.lightmode() == 'dark':
+    #             theme = "dark_" + themes[count.get()]
+    #         else:
+    #             theme = "light_" + themes[count.get()]
+    #         # css_text = (path_to_css / theme).read_text()
+    #         # return ui.tags.style(css_text)
+    #         return ui.include_css(path_to_css / theme, method="inline")
 
     @reactive.effect
     @reactive.event(input.theme_toggle)
