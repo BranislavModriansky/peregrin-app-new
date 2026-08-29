@@ -101,6 +101,16 @@
 }
 
 
+@media (max-width: 575.98px) {
+  .bslib-sidebar-layout[data-collapsible-mobile="true"] {
+    /* Sets the toggle row height to 0 */
+    grid-template-rows: 0 1fr !important;
+  }
+  .bslib-sidebar-layout[data-collapsible-mobile="true"] > .collapse-toggle {
+    top: 2rem !important;
+  }
+}
+
 .invisible-injector {
   content: "";
   position: absolute;
@@ -110,6 +120,11 @@
   height: 0;
   pointer-events: none;
   overflow: hidden;
+}
+
+html {
+  min-width: 60rem;
+  overflow-x: auto; /* if window shrinks below min-width, scroll rather than squish */
 }
 
 body {
@@ -155,7 +170,18 @@ body {
   display: none !important;
 }
 
+.nav:not(.nav-hidden):not(.nav-stacked):not(.flex-column) {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
 .navbar {
+  flex-wrap: nowrap !important;
+  overflow: visible !important;
+  align-items: center !important;
+  display: flex;
+  -webkit-app-region: drag;
+  padding-right: 10rem; /* leave room for the overlay's min/max/close buttons */
   background-color: transparent !important;
   border: none !important;
   height: var(--navbar-height) !important;
@@ -163,9 +189,44 @@ body {
   padding-top: 0rem !important;
   gap: 0 5rem;
   border-bottom: 1px solid transparent !important;
-  /* border-bottom: 1px solid var(--panel-border-color) !important; */
-  border-bottom: 1px solid transparent !important;
   background: linear-gradient(to right, rgb(228, 229, 231) 35%, transparent 95%) bottom/100% 1px no-repeat !important;
+}
+.navbar>.container-fluid {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center !important;
+  width: auto;
+  min-width: 100%;
+}
+.navbar-expand-md {
+  flex-wrap: nowrap !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.navbar-collapse {
+  display: flex !important;
+  flex-basis: auto !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.navbar-nav {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.navbar-toggler {
+  display: none !important;
+}
+.navbar a.nav-link,
+.navbar button,
+.navbar input,
+.navbar .bslib-input-dark-mode,
+.navbar bslib-input-dark-mode {
+  -webkit-app-region: no-drag;
 }
 a.nav-link,
 a.nav-link:hover {
@@ -176,6 +237,7 @@ a.nav-link:hover {
   display: inline-flex !important;
   align-items: center !important;
   height: 100% !important;
+  white-space: nowrap !important;
 }
 a.nav-link.active {
   border-radius: var(--radius) !important;
@@ -186,20 +248,13 @@ a.nav-link.active {
   height: 100% !important;
   border-bottom: none !important;
   position: relative !important;
-}
-a.nav-link.active::after {
-  content: "";
-  position: absolute;
-  left: 0.35rem;
-  right: 0.35rem;
-  top: calc(50% + 1rem);
-  height: 2px;
-  border-radius: 1px;
-  background: var(--nav-active-color);
+  white-space: nowrap !important;
 }
 li.nav-item {
   margin-right: 0.2rem;
   margin-left: 0.4rem;
+  display: flex;
+  align-items: center;
 }
 li.nav-item:last-child {
   margin-right: 0rem;
@@ -224,8 +279,6 @@ bslib-input-dark-mode {
   font-size: 0.8rem !important;
   margin-top: 0.4rem !important;
 }
-
-
 
 
 /* ===== Quad-panel root ===== */
@@ -650,6 +703,7 @@ body.qp-dragging iframe { pointer-events: none; }
   display: grid;
   grid-template-columns: 55% 45%;
   height: calc(100vh - var(--navbar-height) - var(--static-panel-gaps));
+  min-width: 30rem;
   width: 100%;
   padding-top: 0 !important;
 }
@@ -672,7 +726,7 @@ body.qp-dragging iframe { pointer-events: none; }
   padding: 0 !important;
   border: none !important;
 }
-.html-fill-container[data-value="Workspace"] {
+.html-fill-container[data-value="Studio"] {
   margin: 0 !important;
   padding: var(--static-panel-gaps) !important;
   padding-right: 0.2rem !important;
@@ -1052,6 +1106,3 @@ body.im-modal-open::before {
   border-color: transparent !important;
 }
 .im-confirm-ok:hover { background: var(--im-remove-hover-bg) !important; }
-
-
-

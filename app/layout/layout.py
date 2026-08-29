@@ -29,13 +29,13 @@ app_ui = ui.page_sidebar(
     ui.navset_bar(
         ui.nav_panel("Menu", menu_content),
         ui.nav_panel(
-            "Workspace",
+            "Studio",
             quad_layout(source_panel, env_panel, console_panel, output_panel),
         ),
         # Full-page views of each panel
         ui.nav_panel("Clustering", ui.output_ui("clustering_content")),
-        ui.nav_spacer(),
-        ui.nav_control(ui.input_dark_mode(id="lightmode")),
+        # ui.nav_spacer(),
+        # ui.nav_control(ui.input_dark_mode(id="lightmode", mode="light")),
         title=ui.tags.span(
             ui.a(
                 "Peregrin",

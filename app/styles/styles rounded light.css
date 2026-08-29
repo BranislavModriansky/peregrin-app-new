@@ -664,7 +664,7 @@ body.qp-dragging iframe { pointer-events: none; }
   padding: 0 !important;
   border: none !important;
 }
-.html-fill-container[data-value="Workspace"] {
+.html-fill-container[data-value="Studio"] {
   margin: 0 !important;
   padding: var(--panel-gaps) !important;
   padding-right: 0.8rem !important;

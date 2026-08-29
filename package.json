@@ -1,0 +1,12 @@
+{
+  "name": "peregrin",
+  "main": "main.js",
+  "author": "Branislav Modriansky",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^43.4.1"
+  }
+}
