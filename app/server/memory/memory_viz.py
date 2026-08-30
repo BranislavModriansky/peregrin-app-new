@@ -140,7 +140,7 @@ class LiveCPU:
     # ------------------------------------------------------------------ #
     def _build_chart(self):
         fig, ax = plt.subplots(
-            figsize=(3.5, 3),
+            figsize=(1.9, 1.5),
             constrained_layout=self.kw.get('constrained_layout', True),
             dpi=self.kw.get('dpi', 100)
         )
@@ -177,7 +177,7 @@ class LiveCPU:
 
     def _draw_chart(self, window=None):
         if window is None:
-            window = 40  # default window size in seconds
+            window = 30  # default window size in seconds
 
         if self._chart is None:
             self._build_chart()

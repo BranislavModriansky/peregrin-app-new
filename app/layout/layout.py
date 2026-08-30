@@ -16,7 +16,11 @@ output_panel = panel("qp-output", "Explorer", ui.output_ui("explorer_content"))
 
 app_ui = ui.page_sidebar(
     ui.sidebar(
-        ui.div(),
+        ui.div("CIca"),
+        ui.div(
+            ui.output_ui("memory_usage_chart"),
+            class_="sidebar-memory-usage",
+        ),
         position="left",
         open='closed',
         width="16rem",

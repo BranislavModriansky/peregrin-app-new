@@ -21,6 +21,7 @@
 
   --sidebar-radius: 0.3rem;
   --sidebar-bg: rgb(68, 69, 72);
+  --sidebar-content-bg: rgb(68, 69, 72);
   --sidebar-gap: 0.1rem;
   --scroll-track: #f1f1f1;
   --scroll-thumb: #d0d0d0;
@@ -149,6 +150,7 @@ body {
   border-top-right-radius: var(--sidebar-radius) !important;
   border-bottom-right-radius: var(--sidebar-radius) !important;
   z-index: 900 !important;
+  max-width: 16rem !important;
   box-shadow: 
     -0.6rem 1px 8px 0.4rem rgba(0, 0, 0, 0.45),
     -0.6rem 0px 20px -5px   rgba(0, 0, 0, 0.35) !important;
@@ -166,10 +168,30 @@ body {
   max-width: 4rem !important;
   display: block !important;
   overflow: hidden;
-  border-right: 1px solid var(--border);
+  border: none !important;
+  /* border-right: 1px solid var(--border); */
 }
 .bslib-sidebar-layout.sidebar-collapsed > .sidebar > *:not(.collapse-toggle) {
   display: none !important;
+}
+.sidebar-content {
+  position: absolute;
+  flex-direction: column !important;
+  width: 12rem !important;
+  height: calc(100% - 0.4rem) !important;
+  padding: 1.2rem 0.3rem 0.3rem 0.6rem !important;
+  left: 4rem !important;
+  top: 0.2rem !important;
+  color: darkgrey !important;
+  border-top-right-radius: calc(var(--sidebar-radius) - 1px) !important;
+  border-bottom-right-radius: calc(var(--sidebar-radius) - 1px) !important;
+  /* background-color: white !important; */
+  background-color: var(--sidebar-content-bg) !important;
+  border-left: dimgrey 1px solid !important;
+}
+.sidebar-memory-usage {
+  position: absolute;
+  bottom: 0.4rem !important;
 }
 
 .nav:not(.nav-hidden):not(.nav-stacked):not(.flex-column) {

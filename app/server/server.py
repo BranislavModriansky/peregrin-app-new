@@ -19,6 +19,12 @@ def server(input, output, session):
         svg = live_cpu.live_usage(style='gauge', ram_c="#323232", cpu_c="#4164af")  # or style='chart', window=40 
         return ui.HTML(svg)
 
+    @render.ui
+    def memory_usage_chart():
+        reactive.invalidate_later(1)  # re-run every second
+        svg = live_cpu.live_usage(style='chart', window=40, ram_c="#b8ceff", cpu_c="darkgrey")  # or style='gauge'
+        return ui.HTML(svg)
+
 
     themes = [
         "low_contrast.css", 
