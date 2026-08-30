@@ -2,6 +2,8 @@
 
   --bg: #f1f1f1;
   --panel-bg: #fefefe;
+  --panel-secondary-bg: linear-gradient(to bottom, #f3f3f3a0, #f3f3f3a0);
+  --panel-secondary-gradient: linear-gradient(to bottom, #f3f3f3a0, #eaeaea7a);
   --c-1: #d7d7df;
   --border: #e5e7eb;
   --border2: #edeff4;
@@ -44,8 +46,7 @@
   --drop-border: #808080;
   --drop-bg: rgba(208, 208, 208, 0.651);
 
-  --input-panel-gradient: linear-gradient(to bottom, #f3f3f3a0, #cccccc7a);
-  --input-panel-shadow: 0px 2px 10px rgba(225, 225, 225, 0.75);
+  --panel-gradient: linear-gradient(to bottom, #f3f3f3a0, #cccccc7a);
 
   --toggle-bg: #f8f9fa;
   --toggle-border: #dee2e6;
@@ -278,8 +279,7 @@ li.nav-item:last-child {
 span.navbar-brand {
   order: 1 !important;
   position: absolute;
-  left: 52%;
-  transform: translateX(-52%);
+  left: 41rem;
   margin: 0;
 }
 
@@ -728,6 +728,14 @@ body.qp-dragging iframe { pointer-events: none; }
   background: var(--panel-bg);
   overflow: hidden;
 }
+.file-sum-panel,
+.memory-usage-panel,
+.cat-sum-panel {
+  background-image: var(--panel-secondary-bg);
+}
+.preview-raw-panel {
+  background-image: var(--panel-secondary-gradient);
+}
 
 .html-fill-container[data-value="Menu"] {
   margin: 0 !important;
@@ -765,10 +773,9 @@ body.qp-dragging iframe { pointer-events: none; }
 }
 
 .input-panel {
-  background-image: var(--input-panel-gradient);
+  background-image: var(--panel-gradient);
   border-radius: var(--radius);
 }
-
 
 .panel-content { padding: 0.2rem 0.6rem; height: 100%; overflow: hidden; }
 
@@ -1155,8 +1162,21 @@ body.im-modal-open::before {
   overflow: hidden;
   box-sizing: border-box;
 }
+.ai-chat-panel {
+  background-image: var(--panel-gradient);
+  border-radius: var(--radius);
+}
+.code-editor-panel {
+  background-image: var(--panel-secondary-gradient);
+  border-radius: var(--radius);
+}
+.code-editor-code-panel {
+  height: calc(100% - 0.9rem);
+  margin-left: 0.6rem;
+  margin-right: 0.6rem;
+}
 
-.ai-header {
+.panel-header {
   height: 1.875rem;
   min-height: 1.875rem;
   display: flex;
@@ -1165,6 +1185,10 @@ body.im-modal-open::before {
   padding: 0.15rem 0.55rem 0.2rem 0.55rem;
   border-bottom: 1px solid var(--border2);
   flex: 0 0 auto;
+}
+.code-editor-header,
+.graph-output-header {
+  border: none !important;
 }
 
 .ai-body {
