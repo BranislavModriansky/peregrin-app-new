@@ -157,17 +157,17 @@ class LiveCPU:
                             label='CPU')
 
         ax.set_ylim(0, 100)
-        ax.grid(True, alpha=0.3)
+        ax.grid(True, axis='y', alpha=0.3)
+
+        ax.set_facecolor(self.kw.get('facecolor', 'none'))
 
         ax.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['bottom'].set_color('grey')
+        for which in ['top', 'right', 'bottom', 'left']:
+            ax.spines[which].set_color('grey')
         ax.set_xticklabels([])
         ax.set_yticklabels([])
 
-        legend = ax.legend(loc='best') if self.kw.get('show_legend', True) else None
+        legend = ax.legend(loc='upper right', fontsize='x-small', frameon=False, labelcolor='whitesmoke') if self.kw.get('show_legend', True) else None
 
         self._chart = {
             'fig': fig, 'ax': ax,
@@ -210,7 +210,7 @@ class LiveCPU:
         if self.kw.get('show_legend', True):
             c['ram_line'].set_label(f'RAM {ram}%')
             c['cpu_line'].set_label(f'CPU {cpu}%')
-            c['legend'] = c['ax'].legend(loc='best')
+            c['legend'] = c['ax'].legend(loc='best', fontsize='x-small', frameon=False, labelcolor='whitesmoke')
 
         return c['fig']
 
