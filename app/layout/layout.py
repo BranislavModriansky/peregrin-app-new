@@ -1,7 +1,7 @@
 from shiny import ui
 
 from .director import panel, quad_layout
-from .pages.menu import menu_content
+from .pages.menu_page import menu_content
 
 from pathlib import Path
 
@@ -29,11 +29,12 @@ app_ui = ui.page_sidebar(
     ui.navset_bar(
         ui.nav_panel("Menu", menu_content),
         ui.nav_panel(
-            "Studio",
+            "Data Lab",
             quad_layout(source_panel, env_panel, console_panel, output_panel),
         ),
         # Full-page views of each panel
         ui.nav_panel("Clustering", ui.output_ui("clustering_content")),
+        ui.nav_panel("AI Studio", ui.output_ui("chat_content")),
         # ui.nav_spacer(),
         # ui.nav_control(ui.input_dark_mode(id="lightmode", mode="light")),
         title=ui.tags.span(
@@ -75,5 +76,6 @@ app_ui = ui.page_sidebar(
             </svg>
         """),
         class_="invisible-injector"
-    )
+    ),
+    fillable=False,
 )

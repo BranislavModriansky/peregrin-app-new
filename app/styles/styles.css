@@ -29,6 +29,7 @@
   --nav-link-hover-bg: #e8e8e8;
   --nav-link-hover-color: #202124;
   --nav-active-color: #3c4043;
+  --nav-active-color-underline: #3c4043e0;
   --nav-active-gradient: linear-gradient(to bottom, #edf0f4, #fff, #fff);
 
   --header-title-color: #3c4043;
@@ -228,30 +229,37 @@ body {
 .navbar bslib-input-dark-mode {
   -webkit-app-region: no-drag;
 }
-a.nav-link,
-a.nav-link:hover {
-  border-bottom: none !important;
-  border-radius: var(--radius) !important;
+.nav-link,
+.nav-link:hover {
+  border: none !important;
+  border-radius:0 !important;
   font-weight: 600 !important;
   font-size: 1.1rem !important;
   display: inline-flex !important;
   align-items: center !important;
   height: 100% !important;
   white-space: nowrap !important;
-}
-a.nav-link.active {
-  border-radius: var(--radius) !important;
-  font-weight: 600 !important;
-  font-size: 1.1rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  height: 100% !important;
-  border-bottom: none !important;
   position: relative !important;
-  white-space: nowrap !important;
+}
+
+.nav-link.active,
+.nav-item.active > .nav-link {
+  color: var(--nav-active-color) !important;
+}
+
+.nav-link.active::after,
+.nav-item.active > .nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0.4rem;
+  left: 0.3rem;
+  right: 0.3rem;
+  height: 2px;
+  background-color: var(--nav-active-color-underline);
+  border-radius: 1px;
 }
 li.nav-item {
-  margin-right: 0.2rem;
+  margin-right: 0.6rem;
   margin-left: 0.4rem;
   display: flex;
   align-items: center;
@@ -270,8 +278,8 @@ li.nav-item:last-child {
 span.navbar-brand {
   order: 1 !important;
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 52%;
+  transform: translateX(-52%);
   margin: 0;
 }
 
@@ -726,7 +734,7 @@ body.qp-dragging iframe { pointer-events: none; }
   padding: 0 !important;
   border: none !important;
 }
-.html-fill-container[data-value="Studio"] {
+.html-fill-container[data-value="Data Lab"] {
   margin: 0 !important;
   padding: var(--static-panel-gaps) !important;
   padding-right: 0.2rem !important;

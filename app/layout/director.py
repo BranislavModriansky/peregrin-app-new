@@ -6,7 +6,7 @@ path_to_css = Path(__file__).parents[1] / "styles"
 
 
 def panel(id: str, title: str, *content):
-    """A single RStudio-style panel with collapse / maximize buttons."""
+    """A single RData Lab-style panel with collapse / maximize buttons."""
     return ui.div(
         ui.div(
             ui.div(
