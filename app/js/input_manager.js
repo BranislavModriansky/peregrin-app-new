@@ -17,6 +17,9 @@
   let uid = 0;
   const nextId = (p) => `${p}-${++uid}`;
 
+  const ICON_FULL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="M120-120v-240h80v104l124-124 56 56-124 124h104v80H120Zm480 0v-80h104L580-324l56-56 124 124v-104h80v240H600ZM324-580 200-704v104h-80v-240h240v80H256l124 124-56 56Zm312 0-56-56 124-124H600v-80h240v240h-80v-104L636-580Z"/></svg>`;
+  const ICON_PANEL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="m156-100-56-56 124-124H120v-80h240v240h-80v-104L156-100Zm648 0L680-224v104h-80v-240h240v80H736l124 124-56 56ZM120-600v-80h104L100-804l56-56 124 124v-104h80v240H120Zm480 0v-240h80v104l124-124 56 56-124 124h104v80H600Z"/></svg>`;
+
   // Hierarchy: each level can only parent the next one down.
   const LEVELS = ["input", "set", "subset", "group", "subgroup"];
   const childLevelOf = (type) => LEVELS[LEVELS.indexOf(type) + 1] || null;
@@ -34,9 +37,9 @@
       viewport: null,     // panned/translated layer holding nodes + svg
       svg: null,
       fileInput: null,
-      panX: 0,
-      panY: 0,
-      zoom: 0.75,         // start zoomed out by default
+      panX: 40,
+      panY: 80,
+      zoom: 0.65,         // start zoomed out by default
     };
 
     buildToolbar(container, state);
@@ -92,7 +95,7 @@
     homeBtn.type = "button";
     homeBtn.className = "im-btn im-home";
     homeBtn.title = "Return home";
-    homeBtn.textContent = "⌂";
+    homeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/></svg>`;
     homeBtn.addEventListener("click", () => resetPan(state));
     bar.appendChild(homeBtn);
 
@@ -100,7 +103,7 @@
     zoomInBtn.type = "button";
     zoomInBtn.className = "im-btn im-zoom-in";
     zoomInBtn.title = "Zoom in";
-    zoomInBtn.textContent = "+";
+    zoomInBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>`;
     zoomInBtn.addEventListener("click", () => zoomBy(state, 1.2));
     bar.appendChild(zoomInBtn);
 
@@ -108,7 +111,7 @@
     zoomOutBtn.type = "button";
     zoomOutBtn.className = "im-btn im-zoom-out";
     zoomOutBtn.title = "Zoom out";
-    zoomOutBtn.textContent = "−";
+    zoomOutBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg>`;
     zoomOutBtn.addEventListener("click", () => zoomBy(state, 1 / 1.2));
     bar.appendChild(zoomOutBtn);
 
@@ -116,7 +119,7 @@
     resetBtn.type = "button";
     resetBtn.className = "im-btn im-reset";
     resetBtn.title = "Reset input manager";
-    resetBtn.textContent = "⟲";
+    resetBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"/></svg>`;
     resetBtn.addEventListener("click", () => confirmReset(container, state));
     bar.appendChild(resetBtn);
 
@@ -124,7 +127,7 @@
     fullBtn.type = "button";
     fullBtn.className = "im-btn im-fullview";
     fullBtn.title = "Open full view";
-    fullBtn.textContent = "⤢";
+    fullBtn.innerHTML = ICON_FULL;
     fullBtn.addEventListener("click", () => toggleFullView(container));
     bar.appendChild(fullBtn);
 
@@ -153,7 +156,7 @@
 
     document.body.classList.toggle("im-modal-open", on);
     const btn = container.querySelector(".im-fullview");
-    if (btn) btn.textContent = on ? "⤡" : "⤢";
+    if (btn) btn.innerHTML = on ? ICON_PANEL : ICON_FULL;
     // Nudge sizing for the SVG/links.
     requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
   }
@@ -191,7 +194,7 @@
 
     const plugIcon = `
       <svg class="im-plug-icon" viewBox="0 0 24 24" width="30" height="30"
-           fill="none" stroke="currentColor" stroke-width="1.8"
+           fill="none" stroke="grey" stroke-width="1.8"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M9 2v6"/>
         <path d="M15 2v6"/>
@@ -929,8 +932,8 @@
       <div class="im-confirm-box" role="dialog" aria-modal="true">
         <div class="im-confirm-title">Remove "${node.name}"?</div>
         <div class="im-confirm-msg">
-          This will remove the ${node.type}${hasChildren
-            ? " and all of its child elements" : ""}. This cannot be undone.
+          Will result in removing ${node.type}${hasChildren
+            ? " along with all of the downstream nodes" : ""}. This action cannot be undone.
         </div>
         <div class="im-confirm-actions">
           <button type="button" class="im-btn im-confirm-cancel">Cancel</button>
@@ -983,8 +986,8 @@
       <div class="im-confirm-box" role="dialog" aria-modal="true">
         <div class="im-confirm-title">Reset input manager?</div>
         <div class="im-confirm-msg">
-          This will remove all elements and imported files, restoring the
-          default layout. This cannot be undone.
+          Will result in removing all nodes and restoring 
+          the start layout. This action cannot be undone.
         </div>
         <div class="im-confirm-actions">
           <button type="button" class="im-btn im-confirm-cancel">Cancel</button>

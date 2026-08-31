@@ -22,7 +22,7 @@ def server(input, output, session):
     @render.ui
     def memory_usage_chart():
         reactive.invalidate_later(1)  # re-run every second
-        svg = live_cpu.live_usage(style='chart', window=40, ram_c="#b8ceff", cpu_c="darkgrey", facecolor="#3D3F44")
+        svg = live_cpu.live_usage(style='chart', window=40, ram_c="#b8ceff", cpu_c="darkgrey", facecolor="#303236")  # #3D3F44
         return ui.HTML(svg)
 
 

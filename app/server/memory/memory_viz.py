@@ -140,7 +140,7 @@ class LiveCPU:
     # ------------------------------------------------------------------ #
     def _build_chart(self):
         fig, ax = plt.subplots(
-            figsize=(1.9, 1.5),
+            figsize=(1.85, 1.5),
             constrained_layout=self.kw.get('constrained_layout', True),
             dpi=self.kw.get('dpi', 100)
         )
@@ -163,7 +163,9 @@ class LiveCPU:
 
         ax.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False)
         for which in ['top', 'right', 'bottom', 'left']:
-            ax.spines[which].set_color('grey')
+            # ax.spines[which].set_color('grey')
+            ax.spines[which].set_visible(False)
+
         ax.set_xticklabels([])
         ax.set_yticklabels([])
 
