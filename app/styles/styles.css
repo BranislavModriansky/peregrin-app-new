@@ -310,7 +310,7 @@ li.nav-item:last-child {
 span.navbar-brand {
   order: 1 !important;
   position: absolute;
-  left: max(41rem, 45%);
+  left: max(41rem, 47%);
   margin: 0;
 }
 
