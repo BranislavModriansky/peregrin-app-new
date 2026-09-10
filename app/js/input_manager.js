@@ -26,6 +26,11 @@
   const canParent = (parentType, childType) =>
     childLevelOf(parentType) === childType;
 
+  const STARTNODE_INPUT_X = 40;
+  const STARTNODE_INPUT_Y = 280;
+  const STARTNODE_SET_X = 260;
+  const STARTNODE_SET_Y = 300;
+
   /* ===================================================================== */
 
   function setup(container) {
@@ -37,9 +42,9 @@
       viewport: null,     // panned/translated layer holding nodes + svg
       svg: null,
       fileInput: null,
-      panX: 40,
-      panY: 80,
-      zoom: 0.65,         // start zoomed out by default
+      panX: 0,
+      panY: 0,
+      zoom: 0.75,         // start zoomed out by default
     };
 
     buildToolbar(container, state);
@@ -71,10 +76,10 @@
     state.fileInput = fileInput;
 
     // Root input node.
-    const input = addNode(state, "input", 40, 40, null);
+    const input = addNode(state, "input", STARTNODE_INPUT_X, STARTNODE_INPUT_Y, null);
 
     // Default set element, connected to the input, and non-removable.
-    const defaultSet = addNode(state, "set", 260, 60, input.id, false);
+    const defaultSet = addNode(state, "set", STARTNODE_SET_X, STARTNODE_SET_Y, input.id, false);
     defaultSet.locked = true;
     defaultSet.el.classList.add("im-locked");
 
@@ -189,7 +194,7 @@
     el.style.top = y + "px";
 
     const isInput = type === "input";
-    const shapeClass = isInput ? "im-circle" : "im-square";
+    const shapeClass = isInput ? "im-root-node" : "im-import-node";
     const editable = isInput ? "" : 'contenteditable="true"';
 
     const plugIcon = `
@@ -305,7 +310,7 @@
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       if (canvas.dataset.justDragged === "1") { canvas.dataset.justDragged = ""; return; }
-      if (e.target.closest(".im-circle") || e.target.closest(".im-square")) {
+      if (e.target.closest(".im-root-node") || e.target.closest(".im-import-node")) {
         const node = findNode(state, nodeEl.dataset.id);
         if (node.type === "input") return; // input circle can't hold files
         activeNode = node;
@@ -556,7 +561,7 @@
 
   function inPoint(state, node) {
     const vr = state.viewport.getBoundingClientRect();
-    const shape = node.el.querySelector(".im-circle, .im-square");
+    const shape = node.el.querySelector(".im-root-node, .im-import-node");
     const rect = shape.getBoundingClientRect();
     return {
       x: (rect.left - vr.left) / state.zoom,
@@ -638,7 +643,7 @@
 
     const masks = [];
     for (const node of state.nodes) {
-      const shape = node.el.querySelector(".im-circle, .im-square");
+      const shape = node.el.querySelector(".im-root-node, .im-import-node");
       if (!shape) continue;
 
       const cx = node.x + shape.offsetLeft + shape.offsetWidth / 2;
@@ -867,7 +872,7 @@
 
     const masks = [];
     for (const node of state.nodes) {
-      const shape = node.el.querySelector(".im-circle, .im-square");
+      const shape = node.el.querySelector(".im-root-node, .im-import-node");
       if (!shape) continue;
 
       const cx = node.x + shape.offsetLeft + shape.offsetWidth / 2;
@@ -964,8 +969,8 @@
     state.nodes = [];
 
     // Restore the default layout: root input + locked default set.
-    const input = addNode(state, "input", 40, 40, null);
-    const defaultSet = addNode(state, "set", 260, 60, input.id, false);
+    const input = addNode(state, "input", STARTNODE_INPUT_X, STARTNODE_INPUT_Y, null);
+    const defaultSet = addNode(state, "set", STARTNODE_SET_X, STARTNODE_SET_Y, input.id, false);
     defaultSet.locked = true;
     defaultSet.el.classList.add("im-locked");
 
