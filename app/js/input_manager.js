@@ -213,11 +213,11 @@
         ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
         ${isInput ? plugIcon : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}</div>
-        <div class="im-node-files"></div>
         <div class="im-port im-port-out" title="Add a child element">
           <span class="im-port-plus">+</span>
         </div>
       </div>
+      ${isInput ? "" : '<div class="im-node-files"></div>'}
     `;
 
     state.viewport.appendChild(el);
@@ -302,15 +302,36 @@
       if (node) confirmRemove(container, state, node);
     });
 
+    // Remove individual file chip button.
+    canvas.addEventListener("click", (e) => {
+      const chipRemove = e.target.closest(".im-file-chip-remove");
+      if (!chipRemove) return;
+      e.stopPropagation();
+      const chip = chipRemove.closest(".im-file-chip");
+      const nodeEl = chipRemove.closest(".im-node");
+      if (!chip || !nodeEl) return;
+      const node = findNode(state, nodeEl.dataset.id);
+      if (!node) return;
+      const index = Array.from(chip.parentNode.children).indexOf(chip);
+      if (index > -1) {
+        removeFile(state, node, index);
+      }
+    });
+
     // Click shape -> open file dialog.
     canvas.addEventListener("click", (e) => {
       if (e.target.closest(".im-remove")) return;
+      if (e.target.closest(".im-file-chip-remove")) return;
       if (e.target.closest(".im-node-name")) return;
       if (e.target.closest(".im-port")) return;
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       if (canvas.dataset.justDragged === "1") { canvas.dataset.justDragged = ""; return; }
-      if (e.target.closest(".im-root-node") || e.target.closest(".im-import-node")) {
+      if (
+        e.target.closest(".im-root-node") ||
+        e.target.closest(".im-import-node") ||
+        e.target.closest(".im-node-files")
+      ) {
         const node = findNode(state, nodeEl.dataset.id);
         if (node.type === "input") return; // input circle can't hold files
         activeNode = node;
@@ -337,16 +358,36 @@
 
   function addFiles(state, node, fileList) {
     const files = [...fileList];
-    files.forEach((f) => node.files.push(f));
-
     const list = node.el.querySelector(".im-node-files");
+
     files.forEach((f) => {
+      node.files.push(f);
       const chip = document.createElement("div");
       chip.className = "im-file-chip";
-      chip.textContent = f.name;
+      chip.title = f.name;
+      chip.innerHTML = `
+        <span class="im-file-chip-name">${f.name}</span>
+        <button type="button" class="im-file-chip-remove" title="Remove file">×</button>
+      `;
       list.appendChild(chip);
     });
 
+    notifyShinyFiles(node);
+    redrawLinks(state);
+  }
+
+  function removeFile(state, node, index) {
+    if (index >= 0 && index < node.files.length) {
+      node.files.splice(index, 1);
+    }
+    const list = node.el.querySelector(".im-node-files");
+    if (list && list.children[index]) {
+      list.children[index].remove();
+    }
+    notifyShinyFiles(node);
+  }
+
+  function notifyShinyFiles(node) {
     if (window.Shiny && Shiny.setInputValue) {
       Shiny.setInputValue(
         "input_manager_files",
@@ -357,7 +398,6 @@
         { priority: "event" }
       );
     }
-    redrawLinks(state);
   }
 
   /* ---------- Node dragging (reposition) — FIXED ---------- */
@@ -782,6 +822,7 @@
 
     // Touchpad / wheel: Ctrl = zoom, otherwise pan.
     canvas.addEventListener("wheel", (e) => {
+      if (e.target.closest(".im-node-files")) return;
       e.preventDefault();
       if (e.ctrlKey) {
         const p = canvasPoint(canvas, e.clientX, e.clientY);
