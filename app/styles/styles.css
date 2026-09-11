@@ -1,7 +1,17 @@
+/*
+ * Theme variables are injected at runtime by js/theme_manager.js
+ * from styles/themes.json (light / dark). The values below are
+ * minimal fallbacks used before the JS runs.
+ */
 :root {
-
   --bg: #f2f2f2;
   --panel-bg: #fefefe;
+  --navbar-height: 4rem;
+  --static-panel-gaps: 0.2rem;
+  --qp-panel-gaps: 0.6rem;
+  --radius: 0.3rem;
+  --button-radius: 0.4rem;
+  --panel-border-color: rgb(234, 234, 234);
   --panel-secondary-bg: linear-gradient(to bottom, #f3f3f3a0, #f3f3f3a0);
   --panel-secondary-gradient: linear-gradient(to bottom, #f3f3f3a0, #eaeaea7a);
   --c-1: #d7d7df;
@@ -10,24 +20,6 @@
   --border3: #e0e0e0;
   --grid-color: rgba(248, 248, 248, 0);
   --grid-size: 6px;
-
-  --navbar-height: 4rem;
-
-  --static-panel-gaps: 0.2rem;
-  --qp-panel-gaps: 0.6rem;
-  --radius: 0.3rem;
-  --button-radius: 0.4rem;
-  --panel-border-color: rgb(234, 234, 234);
-  --panel-border-color-darker: rgb(224, 224, 224);
-
-  --sidebar-radius: 0.3rem;
-  --sidebar-bg: #444548;
-  --sidebar-content-bg: #444548;
-  --sidebar-gap: 0.1rem;
-  --scroll-track: #f1f1f1;
-  --scroll-thumb: #d0d0d0;
-  --scroll-thumb-hover: #adadad;
-
   --nav-bg: #ff0000;
   --nav-link-color: #5f6368;
   --nav-link-hover-bg: #e8e8e8;
@@ -35,24 +27,18 @@
   --nav-active-color: #3c4043;
   --nav-active-color-underline: #3c4043e0;
   --nav-active-gradient: linear-gradient(to bottom, #edf0f4, #fff, #fff);
-
   --header-title-color: #3c4043;
   --grip-color: #9aa0a6;
   --btn-color: #5f6368;
   --btn-hover-bg: #e2e5e9;
   --btn-hover-color: #202124;
-
   --divider-hover-color: #6b6b6b;
   --divider-hold-color: #1a1a1a;
-
   --drop-border: #808080;
   --drop-bg: rgba(208, 208, 208, 0.651);
-
   --panel-gradient: linear-gradient(to bottom, #f3f3f3a0, #cccccc7a);
-
   --toggle-bg: #f8f9fa;
   --toggle-border: #dee2e6;
-
   --im-modal-bg: rgba(60, 60, 60, 0.5);
   --im-modal-bg-2: rgba(200, 200, 200, 0.5);
   --im-fullview-gradient: linear-gradient(to bottom, #f3f3f3, #cccccc);
@@ -62,46 +48,34 @@
   --im-btn-border: rgba(0, 0, 0, 0.15);
   --im-btn-hover-border: #828282;
   --im-btn-hover-color: #000;
-
   --im-grid-dot: rgba(0, 0, 0, 0.06);
   --im-grid-size: 18px;
   --im-grid-weight: rgba(0, 0, 0, 0.061);
-
   --im-link-stroke: #6d6d6d;
   --im-link-temp-stroke: #949494;
-
   --im-node-bg: #fff;
   --input-square-radius: 0.6rem;
   --im-node-border: 0.08rem solid #c8c8c8;
   --im-node-border-color: #c8c8c8;
-  /* --im-import-node-border: rgba(0, 0, 0, 0.25); */
-  /* --im-import-node-hover-border: #888888; */
-  /* --im-root-node-hover-border: #cecece; */
   --im-plus-color: #888;
-
   --im-accent-set: #707070;
   --im-accent-subset: #959595;
   --im-accent-group: #b5b5b5;
   --im-accent-subgroup: #d3d3d3;
-
   --im-name-color: #333;
   --im-name-focus-border: #b6b6b6;
   --im-root-node-name-color: #555;
   --im-chip-color: #444;
   --im-chip-bg: #f2f4f8;
-
   --im-port-border: #6d6d6d;
   --im-port-hover-bg: #eef1ff;
   --im-port-plus-color: #797979;
-
   --im-handle-fill: #797979;
   --im-handle-hover-fill: #4f4f4f;
-
   --im-drop-hover-border: #4caf50;
   --im-drop-hover-shadow: rgba(76, 175, 80, 0.25);
   --im-plug-border: #626262;
   --im-plug-shadow: rgba(0, 0, 0, 0.2);
-
   --im-remove-bg: #ff5a5a;
   --im-remove-hover-bg: #e23b3b;
   --im-remove-color: #fff;
@@ -707,19 +681,15 @@ body.qp-dragging iframe { pointer-events: none; }
 ::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
 
 
-
+.app-theme-manager { width: 0 !important; height: 0 !important; overflow: hidden !important; }
 .collapse-toggle,
-.anim-toggle,
 .theme-toggle {
   width: 2rem !important;
   height: 2rem !important;
   background-color: var(--toggle-bg) !important;
   border: 1px solid var(--toggle-border) !important;
   border-radius: var(--button-radius) !important;
-  z-index: 999 !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+  z-index: 998 !important;
 }
 .collapse-toggle {
   position: relative !important;
@@ -727,16 +697,16 @@ body.qp-dragging iframe { pointer-events: none; }
   top: 1rem !important;
   transform: none !important;
 }
-.anim-toggle,
 .theme-toggle {
   position: absolute !important;
   left: 1rem !important;
+  bottom: 1rem !important;
   padding: 0 !important;
   min-width: 0 !important;
   min-height: 0 !important;
 }
-.anim-toggle { bottom: 4rem !important; }
 .theme-toggle { bottom: 1rem !important; }
+bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; bottom: 1.2rem !important; z-index: 999 !important; }
 
 /* ===== Menu layout ===== */
 .menu-grid {

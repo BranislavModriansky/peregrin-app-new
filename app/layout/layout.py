@@ -27,8 +27,7 @@ app_ui = ui.page_sidebar(
     ),
     ui.div(
         ui.busy_indicators.use(spinners=True, pulse=False, fade=True),
-        ui.input_action_button("anim_toggle", "⦽", class_="anim-toggle"),
-        ui.input_action_button("theme_toggle", "◑", class_="theme-toggle"),
+        ui.div(class_="theme-toggle"),
         class_="sidebar-buttons",
     ),
     ui.navset_bar(
@@ -40,8 +39,6 @@ app_ui = ui.page_sidebar(
         # Full-page views of each panel
         ui.nav_panel("Clustering", ui.output_ui("clustering_content")),
         ui.nav_panel("AI Studio", ai_studio_page_content),
-        # ui.nav_spacer(),
-        # ui.nav_control(ui.input_dark_mode(id="lightmode", mode="light")),
         title=ui.tags.span(
             ui.a(
                 "Peregrin",
@@ -55,6 +52,7 @@ app_ui = ui.page_sidebar(
         selected="Menu",
     ),
     ui.head_content(
+        ui.input_dark_mode(id="app_theme"),
         ui.include_css(path_to_css / "styles.css"),
         ui.include_js(path_to_js / "theme_manager.js", method="inline"),
         ui.include_js(path_to_js / "input_manager.js", method="inline"),

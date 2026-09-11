@@ -1,68 +1,87 @@
 (function () {
   "use strict";
 
-  const THEME_DIR = "themes/";
+  const THEME_JSON_URL = "styles/themes.json";
   const STORAGE_KEY = "peregrin-theme";
-  const DEFAULT_THEME = "light_low_contrast";
+  const DEFAULT_THEME = "light";
 
-  // Applies a set of variables onto :root as CSS custom properties.
+  let THEMES = null;
+
+  /** Apply a set of CSS variables to :root. */
   function applyVariables(vars) {
+    if (!vars) return;
     const root = document.documentElement;
-    for (const key in vars) {
-      if (Object.prototype.hasOwnProperty.call(vars, key)) {
-        root.style.setProperty("--" + key, vars[key]);
-      }
+    for (const [name, value] of Object.entries(vars)) {
+      root.style.setProperty(`--${name}`, value);
     }
   }
 
-  // Fetches and applies a theme by name (inline bundle first, then fetch).
-  async function loadTheme(name) {
+  /** Apply a named theme ("light" | "dark"). */
+  function applyTheme(name) {
+    if (!THEMES) return;
+    const theme = THEMES[name] || THEMES[DEFAULT_THEME];
+    if (!theme) return;
+    applyVariables(theme);
+    document.documentElement.setAttribute("data-theme", name);
     try {
-      let theme;
-      const bundle = window.__PEREGRIN_THEMES__;
-      if (bundle && bundle[name]) {
-        theme = bundle[name];
-      } else {
-        const res = await fetch(THEME_DIR + name + ".json", { cache: "no-cache" });
-        if (!res.ok) throw new Error("Theme not found: " + name);
-        theme = await res.json();
-      }
-      applyVariables(theme.variables || {});
-      document.documentElement.setAttribute("data-theme", theme.name || name);
-      try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
-      document.dispatchEvent(
-        new CustomEvent("theme:changed", { detail: { name: theme.name || name } })
-      );
-      return theme;
-    } catch (err) {
-      console.error("[theme-manager]", err);
-      if (name !== DEFAULT_THEME) return loadTheme(DEFAULT_THEME);
+      localStorage.setItem(STORAGE_KEY, name);
+    } catch (e) {
+      /* ignore storage errors */
     }
   }
 
-  // Public API.
-  const ThemeManager = {
-    load: loadTheme,
-    current: () => document.documentElement.getAttribute("data-theme"),
-    init() {
-      let saved = DEFAULT_THEME;
-      try { saved = localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME; } catch (e) {}
-      return loadTheme(saved);
+  /** Resolve the current theme from bslib dark-mode or storage. */
+  function resolveCurrentTheme() {
+    const attr = document.documentElement.getAttribute("data-bs-theme");
+    if (attr === "dark" || attr === "light") return attr;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "dark" || stored === "light") return stored;
+    } catch (e) {
+      /* ignore */
+    }
+    return DEFAULT_THEME;
+  }
+
+  /** Watch bslib's dark-mode toggle (updates data-bs-theme on <html>). */
+  function watchDarkMode() {
+    const observer = new MutationObserver(() => {
+      applyTheme(resolveCurrentTheme());
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-bs-theme"],
+    });
+  }
+
+  /** Load themes from JSON, then initialize. */
+  function init() {
+    fetch(THEME_JSON_URL)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data) => {
+        THEMES = data;
+        applyTheme(resolveCurrentTheme());
+        watchDarkMode();
+      })
+      .catch((err) => {
+        console.error("[theme_manager] Failed to load themes.json:", err);
+      });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  // Expose a small API for manual toggling/debugging.
+  window.PeregrinTheme = {
+    apply: applyTheme,
+    toggle() {
+      applyTheme(resolveCurrentTheme() === "dark" ? "light" : "dark");
+    },
+    get themes() {
+      return THEMES;
     },
   };
-
-  window.ThemeManager = ThemeManager;
-
-  // Auto-init as early as possible.
-  if (document.readyState !== "loading") ThemeManager.init();
-  else document.addEventListener("DOMContentLoaded", () => ThemeManager.init());
-
-  // Optional: let Shiny trigger theme changes.
-  document.addEventListener("shiny:connected", () => {
-    if (window.Shiny && Shiny.addCustomMessageHandler) {
-      Shiny.addCustomMessageHandler("set-theme", (msg) => {
-        if (msg && msg.name) loadTheme(msg.name);
-      });
-    }
-  });
 })();
