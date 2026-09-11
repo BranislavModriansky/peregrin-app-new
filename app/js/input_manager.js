@@ -26,6 +26,49 @@
   const canParent = (parentType, childType) =>
     childLevelOf(parentType) === childType;
 
+  // The deepest (highest-index) node type currently present on the canvas,
+  // excluding the root "input".
+  function lowestLevelPresent(state) {
+    let idx = -1;
+    state.nodes.forEach((n) => {
+      if (n.type === "input") return;
+      const i = LEVELS.indexOf(n.type);
+      if (i > idx) idx = i;
+    });
+    return idx === -1 ? null : LEVELS[idx];
+  }
+
+  // The level that is allowed to receive file imports.
+  function importableLevel(state) {
+    return state.importLevel || lowestLevelPresent(state);
+  }
+
+  // A node may receive files only if it's at the importable level.
+  function canImportInto(state, node) {
+    if (node.type === "input") return false;
+    return node.type === importableLevel(state);
+  }
+
+  // Whether new children may be created below the given parent.
+  function canAddChild(state, parent) {
+    const childType = childLevelOf(parent.type);
+    if (!childType) return false;
+    // Once any files have been imported, lock the depth: no deeper nodes.
+    if (state.importLevel) {
+      return LEVELS.indexOf(childType) <= LEVELS.indexOf(state.importLevel);
+    }
+    return true;
+  }
+
+  // Show/hide the "+" port on each node based on current rules.
+  function refreshPortAvailability(state) {
+    state.nodes.forEach((node) => {
+      const port = node.el.querySelector(".im-port-out");
+      if (!port) return;
+      port.style.display = canAddChild(state, node) ? "" : "none";
+    });
+  }
+
   const STARTNODE_INPUT_X = 40;
   const STARTNODE_INPUT_Y = 280;
   const STARTNODE_SET_X = 260;
@@ -45,6 +88,7 @@
       panX: 0,
       panY: 0,
       zoom: 0.75,         // start zoomed out by default
+      importLevel: null,  // once files imported, the fixed level allowed for imports
     };
 
     buildToolbar(container, state);
@@ -88,6 +132,7 @@
     wireHandleDrag(state);
     applyPan(state);
     redrawLinks(state);
+    refreshPortAvailability(state);
   }
 
   /* ---------- Toolbar (full view button) ---------- */
@@ -213,11 +258,11 @@
         ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
         ${isInput ? plugIcon : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}</div>
-        <div class="im-node-files"></div>
         <div class="im-port im-port-out" title="Add a child element">
           <span class="im-port-plus">+</span>
         </div>
       </div>
+      ${isInput ? "" : '<div class="im-node-files"></div>'}
     `;
 
     state.viewport.appendChild(el);
@@ -302,17 +347,39 @@
       if (node) confirmRemove(container, state, node);
     });
 
+    // Remove individual file chip button.
+    canvas.addEventListener("click", (e) => {
+      const chipRemove = e.target.closest(".im-file-chip-remove");
+      if (!chipRemove) return;
+      e.stopPropagation();
+      const chip = chipRemove.closest(".im-file-chip");
+      const nodeEl = chipRemove.closest(".im-node");
+      if (!chip || !nodeEl) return;
+      const node = findNode(state, nodeEl.dataset.id);
+      if (!node) return;
+      const index = Array.from(chip.parentNode.children).indexOf(chip);
+      if (index > -1) {
+        removeFile(state, node, index);
+      }
+    });
+
     // Click shape -> open file dialog.
     canvas.addEventListener("click", (e) => {
       if (e.target.closest(".im-remove")) return;
+      if (e.target.closest(".im-file-chip-remove")) return;
       if (e.target.closest(".im-node-name")) return;
       if (e.target.closest(".im-port")) return;
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       if (canvas.dataset.justDragged === "1") { canvas.dataset.justDragged = ""; return; }
-      if (e.target.closest(".im-root-node") || e.target.closest(".im-import-node")) {
+      if (
+        e.target.closest(".im-root-node") ||
+        e.target.closest(".im-import-node") ||
+        e.target.closest(".im-node-files")
+      ) {
         const node = findNode(state, nodeEl.dataset.id);
         if (node.type === "input") return; // input circle can't hold files
+        if (!canImportInto(state, node)) return; // only lowest-level nodes
         activeNode = node;
         state.fileInput.value = "";
         state.fileInput.click();
@@ -337,16 +404,46 @@
 
   function addFiles(state, node, fileList) {
     const files = [...fileList];
-    files.forEach((f) => node.files.push(f));
+    if (!files.length) return;
+
+    // Lock the import level to this node's level the first time files are
+    // imported, freezing the hierarchy depth.
+    if (!state.importLevel) {
+      state.importLevel = node.type;
+      refreshPortAvailability(state);
+    }
 
     const list = node.el.querySelector(".im-node-files");
+
     files.forEach((f) => {
+      node.files.push(f);
       const chip = document.createElement("div");
       chip.className = "im-file-chip";
-      chip.textContent = f.name;
+      chip.title = f.name;
+      chip.innerHTML = `
+        <span class="im-file-chip-name">${f.name}</span>
+        <button type="button" class="im-file-chip-remove" title="Remove file">×</button>
+      `;
       list.appendChild(chip);
     });
 
+    notifyShinyFiles(node);
+    redrawLinks(state);
+  }
+
+  function removeFile(state, node, index) {
+    if (index >= 0 && index < node.files.length) {
+      node.files.splice(index, 1);
+    }
+    const list = node.el.querySelector(".im-node-files");
+    if (list && list.children[index]) {
+      list.children[index].remove();
+    }
+    notifyShinyFiles(node);
+    refreshImportLock(state);
+  }
+
+  function notifyShinyFiles(node) {
     if (window.Shiny && Shiny.setInputValue) {
       Shiny.setInputValue(
         "input_manager_files",
@@ -357,7 +454,6 @@
         { priority: "event" }
       );
     }
-    redrawLinks(state);
   }
 
   /* ---------- Node dragging (reposition) — FIXED ---------- */
@@ -739,7 +835,8 @@
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       const node = findNode(state, nodeEl.dataset.id);
-      if (node && node.type !== "input" && e.dataTransfer.files.length) {
+      if (node && node.type !== "input" && canImportInto(state, node) &&
+          e.dataTransfer.files.length) {
         addFiles(state, node, e.dataTransfer.files);
       }
     });
@@ -782,6 +879,7 @@
 
     // Touchpad / wheel: Ctrl = zoom, otherwise pan.
     canvas.addEventListener("wheel", (e) => {
+      if (e.target.closest(".im-node-files")) return;
       e.preventDefault();
       if (e.ctrlKey) {
         const p = canvasPoint(canvas, e.clientX, e.clientY);
@@ -842,10 +940,12 @@
       const parent = findNode(state, parentEl.dataset.id);
       const childType = childLevelOf(parent.type);
       if (!childType) return; // terminal level
+      if (!canAddChild(state, parent)) return; // depth locked by imports
 
       const pos = childSpawnPos(state, parent);
       addNode(state, childType, pos.x, pos.y, parent.id);
       redrawLinks(state);
+      refreshPortAvailability(state);
       // The new node may not be laid out yet on this frame; redraw once
       // layout has settled so the connector is always rendered.
       requestAnimationFrame(() => redrawLinks(state));
@@ -967,6 +1067,7 @@
     // Remove every node from the DOM and state.
     state.nodes.forEach((n) => n.el.remove());
     state.nodes = [];
+    state.importLevel = null;
 
     // Restore the default layout: root input + locked default set.
     const input = addNode(state, "input", STARTNODE_INPUT_X, STARTNODE_INPUT_Y, null);
@@ -976,10 +1077,7 @@
 
     resetPan(state);
     redrawLinks(state);
-
-    if (window.Shiny && Shiny.setInputValue) {
-      Shiny.setInputValue("input_manager_reset", Date.now(), { priority: "event" });
-    }
+    refreshPortAvailability(state);
   }
 
   function confirmReset(container, state) {
@@ -1015,5 +1113,18 @@
     document.addEventListener("keydown", function esc(e) {
       if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
     });
+  }
+
+  // True if any node on the canvas currently holds imported files.
+  function anyFilesPresent(state) {
+    return state.nodes.some((n) => n.files && n.files.length > 0);
+  }
+
+  // Release the depth lock if no files remain, then refresh ports.
+  function refreshImportLock(state) {
+    if (state.importLevel && !anyFilesPresent(state)) {
+      state.importLevel = null;
+    }
+    refreshPortAvailability(state);
   }
 })();

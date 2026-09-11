@@ -1,6 +1,6 @@
 :root {
 
-  --bg: #f1f1f1;
+  --bg: #f2f2f2;
   --panel-bg: #fefefe;
   --panel-secondary-bg: linear-gradient(to bottom, #f3f3f3a0, #f3f3f3a0);
   --panel-secondary-gradient: linear-gradient(to bottom, #f3f3f3a0, #eaeaea7a);
@@ -53,7 +53,8 @@
   --toggle-bg: #f8f9fa;
   --toggle-border: #dee2e6;
 
-  --im-modal-bg: rgba(255, 255, 255, 0.3);
+  --im-modal-bg: rgba(60, 60, 60, 0.5);
+  --im-modal-bg-2: rgba(200, 200, 200, 0.5);
   --im-fullview-gradient: linear-gradient(to bottom, #f3f3f3, #cccccc);
   --im-fullview-border: #cecece;
   --im-btn-bg: #fff;
@@ -310,7 +311,7 @@ li.nav-item:last-child {
 span.navbar-brand {
   order: 1 !important;
   position: absolute;
-  left: 41rem;
+  left: max(41rem, 47%);
   margin: 0;
 }
 
@@ -846,8 +847,8 @@ body.qp-dragging iframe { pointer-events: none; }
 /* ===== Input manager ===== */
 .input-manager {
   position: relative;
-  /* width: 100%;
-  height: 100%; */
+  /* width: 100%; */
+  height: calc(100% - 4.2rem);
   top: 2.5rem;
   min-height: 34rem;
   padding: 0.6rem;
@@ -870,10 +871,10 @@ body.im-modal-open::before {
 
 .input-manager.im-fullview-on {
   position: fixed;
-  top: 2vh;
+  top: 8vh;
   left: 2vw;
   width: 96vw;
-  height: 96vh;
+  height: 88vh;
   max-width: 100vw;
   max-height: 100vh;
   z-index: 1001;
@@ -1039,6 +1040,10 @@ svg.im-btn-icon {
   border-style: solid;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 .im-import-node:hover { box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08); }
 
@@ -1065,33 +1070,92 @@ svg.im-btn-icon {
 
 .im-node-name {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--im-name-color);
   outline: none;
   cursor: text;
   border-bottom: 1px solid transparent;
 }
 .im-node-name:focus { border-bottom-color: var(--im-name-focus-border); }
-.im-root-node .im-node-name { font-weight: 500; color: var(--im-root-node-name-color); margin-top: 4px; }
+.im-root-node .im-node-name { 
+  font-weight: 500; 
+  color: var(--im-root-node-name-color); 
+  font-size: 18px; 
+}
+.im-set      .im-import-node .im-node-name { font-size: 18px;}
+.im-subset   .im-import-node .im-node-name { font-size: 16px;}
+.im-group    .im-import-node .im-node-name { font-size: 14px;}
+.im-subgroup .im-import-node .im-node-name { font-size: 12px;}
 
 .im-node-files {
-  margin-top: 6px;
+  position: absolute;
+  top: calc(100% - 0.8rem);
+  left: calc(100% - 0.4rem);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  background: transparent;
+  padding: 4px 6px;
+  min-width: 5rem;
+  max-width: 15rem;
+  max-height: 92px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  cursor: pointer;
 }
-.im-root-node .im-node-files { display: none; }
+.im-node-files::-webkit-scrollbar {
+  display: none;
+}
+.im-node-files:empty {
+  display: none;
+}
 .im-file-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
   font-size: 11px;
+  line-height: 16px;
+  height: 20px;
+  box-sizing: border-box;
   color: var(--im-chip-color);
   background: var(--im-chip-bg);
-  border-radius: var(--radius);
+  border-radius: 1px;
   padding: 2px 6px;
   text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   max-width: 180px;
+  flex-shrink: 0;
+}
+.im-file-chip-name {
+  overflow: auto;
+  white-space: nowrap;
+  flex: 1;
+}
+.im-file-chip-name::-webkit-scrollbar {
+  display: none;
+}
+.im-file-chip-remove {
+  background: transparent;
+  border: none;
+  color: var(--im-chip-color);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+.im-file-chip:hover .im-file-chip-remove {
+  opacity: 0.75;
+}
+.im-file-chip-remove:hover {
+  opacity: 1 !important;
+  color: var(--im-remove-bg);
 }
 
 .im-port-out {
@@ -1183,9 +1247,9 @@ svg.im-btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--im-modal-bg);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
+  background: var(--im-modal-bg-2);
 }
 .im-confirm-box {
   background: var(--im-node-bg);
