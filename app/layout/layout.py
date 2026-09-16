@@ -68,16 +68,9 @@ app_ui = ui.page_sidebar(
     ui.div(
         "",
         ui.HTML("""
-            <svg width='0' height='0' aria-hidden='true'>
-                <filter id='grain'>
-                    <feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/>
-                    <feColorMatrix type='saturate' values='0'/>
-                    <feComponentTransfer>
-                        <feFuncA type='linear' slope='0.15'/>
-                    </feComponentTransfer>
-                    <feComposite operator='over' in2='SourceGraphic'/>
-                </filter>
-            </svg>
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Instrument+Sans">
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Manrope">
         """),
         class_="invisible-injector"
     ),

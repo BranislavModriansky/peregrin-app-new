@@ -4,6 +4,9 @@
  * minimal fallbacks used before the JS runs.
  */
 :root {
+  --font-family: "Manrope", sans-serif;
+  --font-family-head: "Instrument Sans", sans-serif;
+  --font-family-data: "Inter", sans-serif;
   --bg: #f2f2f2;
   --panel-bg: #fefefe;
   --navbar-height: 4rem;
@@ -113,6 +116,12 @@ body {
   background: var(--bg) !important;
   position: relative;
   overflow-x: hidden;
+  font-family: var(--font-family) !important;
+  letter-spacing: 0.04em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-stroke: 0.35px rgba(0, 0, 0, 0.1);
 }
 
 .main {
@@ -129,14 +138,12 @@ body {
   border-bottom-right-radius: var(--sidebar-radius) !important;
   z-index: 900 !important;
   max-width: 16rem !important;
-  box-shadow: 
-    -0.6rem 1px 8px 0.4rem rgba(0, 0, 0, 0.45),
-    -0.6rem 0px 20px -5px   rgba(0, 0, 0, 0.35) !important;
+  box-shadow: var(--sidebar-box-shadow);
 }
 .bslib-sidebar-layout {
   padding: var(--sidebar-gap) 0 var(--sidebar-gap) var(--sidebar-gap) !important;
-  transition-duration: 0s !important;
-  animation-duration: 0s !important;
+  /* transition-duration: 0s !important;
+  animation-duration: 0s !important; */
 }
 .bslib-sidebar-layout.sidebar-collapsed {
   grid-template-columns: 4rem 1fr !important;
@@ -198,6 +205,8 @@ div#memory_usage_chart {
   gap: 0 5rem;
   border-bottom: 1px solid transparent !important;
   background: linear-gradient(to right, rgb(228, 229, 231) 35%, transparent 95%) bottom/100% 1px no-repeat !important;
+  /* letter-spacing: 0.04rem !important; */
+  font-family: var(--font-family-head) !important;
 }
 .navbar>.container-fluid {
   display: inline-flex;
@@ -240,7 +249,7 @@ div#memory_usage_chart {
 .nav-link:hover {
   border: none !important;
   border-radius:0 !important;
-  font-weight: 600 !important;
+  /* font-weight: 600 !important; */
   font-size: 1.1rem !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -276,10 +285,11 @@ li.nav-item:last-child {
 }
 
 .app-title {
-  font-weight: 600 !important;
+  /* font-weight: 600 !important; */
   font-size: 1.6rem !important;
   color: var(--color-secondary) !important;
   text-decoration: none !important;
+  font-family: var(--font-family-head) !important;
 }
 
 span.navbar-brand {
@@ -347,7 +357,7 @@ bslib-input-dark-mode {
   border-radius: var(--button-radius) !important;
   cursor: pointer;
   font-size: 0.8rem;
-  font-weight: 600;
+  /* font-weight: 600; */
   text-align: left;
   color: var(--nav-link-color);
   position: relative;
@@ -518,7 +528,7 @@ bslib-input-dark-mode {
 .qp-grip { cursor: grab; color: var(--grip-color); font-size: 0.85rem; align-self: center; }
 .qp-grip:active { cursor: grabbing; }
 .qp-title {
-  font-weight: 600;
+  /* font-weight: 600; */
   font-size: 0.8rem;
   color: var(--header-title-color);
   white-space: nowrap;
