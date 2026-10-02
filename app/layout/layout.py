@@ -57,15 +57,6 @@ app_ui = ui.page_sidebar(
         ui.tags.div(class_="grid-right"),
         class_="grid-bg",
     ),
-    # ui.div(
-    #     "",
-    #     ui.HTML("""
-    #         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
-    #         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Instrument+Sans">
-    #         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Manrope">
-    #     """),
-    #     class_="invisible-injector"
-    # ),
     ui.head_content(
         ui.tags.link(rel="preconnect", href="https://fonts.googleapis.com"),
         ui.tags.link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
@@ -79,6 +70,7 @@ app_ui = ui.page_sidebar(
         ui.include_js(path_to_js / "input_manager.js", method="inline"),
         ui.include_js(path_to_js / "quadpanel.js", method="inline"),
         ui.include_js(path_to_js / "ai_studio.js", method="inline"),
+        ui.include_js(path_to_js / "directory_browser.js", method="inline")
     ),
     fillable=False,
 )

@@ -3,7 +3,8 @@ from shiny import ui
 menu_content = ui.div(
     ui.div(
         ui.div(
-            "file input",
+            ui.div(class_="directory-browser"),
+            ui.div(class_="directory-browser-shadow"),
             ui.div(class_="input-manager"),
             class_="panel-content"
         ),

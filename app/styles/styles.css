@@ -134,6 +134,19 @@ body {
   font-size: 0.8rem !important;
 }
 
+button, .btn,
+.btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning, .btn-info, .btn-light, .btn-dark {
+  border-radius: var(--button-radius) !important;
+  padding: 0;
+  margin: 0;
+}
+
+.btn > bslib-switch-inline > span {
+  display: flex !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
 .sidebar {
   background-color: var(--sidebar-bg) !important;
   border: none !important;
@@ -829,15 +842,41 @@ bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; 
 
 
 
+/*    Directory browser    */
+/* ----------------------- */
 
+.directory-browser {
+  position: relative;
+  border-radius: var(--radius);
+  border-top-right-radius: var(--button-radius);
+  border-bottom-right-radius: var(--button-radius);
+  background: var(--panel-secondary-bg);
+  border: 1px solid var(--panel-border-color-darker);
+  height: 2.6rem;
+  overflow: hidden;
+  margin: 0.4rem 0 0.6rem 0;
+  width: 100%;
+}
+
+.directory-browser-shadow {
+  position: absolute;
+  top: calc(0.6rem + 2.6rem);
+  left: 0.6rem;
+  width: calc(100% - 1.2rem);
+  height: 0.6rem;
+  background: linear-gradient(to right, #00000000 0, #ebebec75 25%, #ebebec75 35%, #e2e4e7a2 50%, #ebebec75 65%, #ebebec75 75%, #00000000 100%);
+  pointer-events: none;
+  width: 100%;
+  z-index: 9;
+}
 
 
 /* ===== Input manager ===== */
 .input-manager {
   position: relative;
   /* width: 100%; */
-  height: calc(100% - 4.2rem);
-  top: 2.5rem;
+  height: calc(100% - 3.8rem);
+  z-index: 10;
   min-height: 34rem;
   padding: 0.6rem;
   overflow: hidden;
@@ -1206,7 +1245,7 @@ svg.im-btn-icon {
   border-radius: 50%;
   background: var(--im-remove-bg);
   color: var(--im-remove-color);
-  font-size: 13px;
+  font-size: 22px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -1216,7 +1255,7 @@ svg.im-btn-icon {
   transition: opacity 0.12s, transform 0.12s;
   z-index: 4;
 }
-.im-node:hover .im-remove { opacity: 1;  padding-bottom: 0.21rem; }
+.im-node:hover .im-remove { opacity: 1; }
 .im-remove:hover { transform: scale(1.1); }
 .im-node.im-locked .im-remove { display: none; }
 

@@ -96,12 +96,27 @@
     });
   }
 
+  /* ---------- Child spawn placement ---------- */
+
+  // Find a spot to the right of the parent that isn't (almost) exactly on
+  // top of an existing node. Cheap: tries a small fixed list of candidate
+  // slots and does simple distance checks — no collision physics.
+  const SPAWN_DX = 250;          // horizontal gap from parent
+  const SPAWN_STEP = 150;         // vertical spacing between candidate slots
+  const SPAWN_MIN_DIST = 50;     // "too close" threshold (partial overlap OK)
+  const OFFSET_TYPE = {
+    input: 1,
+    set: 0.85,
+    subset: 0.75,
+    group: 0.6,
+    subgroup: 1,
+  };
+
   // Start positions. X = left edge, Y = vertical centre of each node's shape.
   const STARTNODE_INPUT_X = 40;
   const STARTNODE_INPUT_Y = 280;
-  const STARTNODE_SET_X = 260;
-  // Same centre-Y as the input so the default set connects straight across.
-  const STARTNODE_SET_Y = 280;
+  const STARTNODE_SET_X   = STARTNODE_INPUT_X + SPAWN_DX;
+  const STARTNODE_SET_Y   = STARTNODE_INPUT_Y;
 
   /* ===================================================================== */
 
@@ -154,8 +169,6 @@
 
     // Add the root input node.
     const input = addNode(state, "input", STARTNODE_INPUT_X, STARTNODE_INPUT_Y, null);
-
-    // Add the default, non-removable set element, connected to the input.
     const defaultSet = addNode(state, "set", STARTNODE_SET_X, STARTNODE_SET_Y, input.id, false);
     defaultSet.locked = true;
     defaultSet.el.classList.add("im-locked");
@@ -299,7 +312,7 @@
     // Backticks allow multiline HTML and ${...} substitutions.
     el.innerHTML = `
       <div class="${shapeClass}" title="Click or drop files to import">
-        ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">x</button>'}
+        ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
         ${isInput ? plugIcon : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}${typeIdx}</div>
         <div class="im-port im-port-out" title="Add a child element">
@@ -1110,14 +1123,6 @@
     layer.style.maskComposite = "add";
   }
 
-  /* ---------- Child spawn placement ---------- */
-
-  // Find a spot to the right of the parent that isn't (almost) exactly on
-  // top of an existing node. Cheap: tries a small fixed list of candidate
-  // slots and does simple distance checks — no collision physics.
-  const SPAWN_DX = 200;          // horizontal gap from parent
-  const SPAWN_STEP = 70;         // vertical spacing between candidate slots
-  const SPAWN_MIN_DIST = 55;     // "too close" threshold (partial overlap OK)
 
   function childSpawnPos(state, parent) {
     const baseX = parent.x + SPAWN_DX;
@@ -1125,9 +1130,10 @@
     // with the parent, so a single child connects with a straight cable.
     const baseY = parent.y;
 
+
     // Candidate vertical offsets: 0, +1, -1, +2, -2, ...
     for (let i = 0; true; i++) {
-      const offset = (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * SPAWN_STEP;
+      const offset = (i % 2 === 0 ? -1 : 1) * Math.ceil(i / 2) * SPAWN_STEP * OFFSET_TYPE[parent.type];
       const x = baseX + (i * -5);
       const y = baseY + offset;
 
