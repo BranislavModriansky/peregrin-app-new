@@ -96,10 +96,12 @@
     });
   }
 
+  // Start positions. X = left edge, Y = vertical centre of each node's shape.
   const STARTNODE_INPUT_X = 40;
   const STARTNODE_INPUT_Y = 280;
   const STARTNODE_SET_X = 260;
-  const STARTNODE_SET_Y = 300;
+  // Same centre-Y as the input so the default set connects straight across.
+  const STARTNODE_SET_Y = 280;
 
   /* ===================================================================== */
 
@@ -258,23 +260,24 @@
 
   const TYPE_LABEL = {
     input: "Input",
-    set: "Set",
-    subset: "Subset",
-    group: "Group",
-    subgroup: "Subgroup",
+    set: "set",
+    subset: "subset",
+    group: "group",
+    subgroup: "subgroup",
   };
 
-  function addNode(state, type, x, y, parentId, autoSelect = true) {
+  function addNode(state, type, x, y, parentId, autoSelect = false) {
     // x/y are positions in the canvas, not positions on the whole screen.
     const id = nextId("im-" + type);
     const el = document.createElement("div");
     el.className = "im-node im-" + type;
     el.dataset.id = id;
     el.dataset.type = type;
+    // x = left edge, y = vertical CENTRE of the node's shape. The CSS `top`
+    // is derived from that centre once the element is measured (positionNode).
     el.style.left = x + "px";
-    el.style.top = y + "px";
     
-    let typeIdx = ` ${state.nodes.filter(n => n.type === type).length + 1}`;
+    let typeIdx = `_${state.nodes.filter(n => n.type === type).length + 1}`;
     if (TYPE_LABEL[type] === "Input") typeIdx = "";
 
     const isInput = type === "input";
@@ -296,7 +299,7 @@
     // Backticks allow multiline HTML and ${...} substitutions.
     el.innerHTML = `
       <div class="${shapeClass}" title="Click or drop files to import">
-        ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
+        ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">x</button>'}
         ${isInput ? plugIcon : ""}
         <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}${typeIdx}</div>
         <div class="im-port im-port-out" title="Add a child element">
@@ -313,11 +316,12 @@
       name: TYPE_LABEL[type] + typeIdx, files: [], parentId,
     };
     state.nodes.push(node);
+    // Convert the stored centre-y into a CSS top now that the shape is in the
+    // DOM and can be measured.
+    positionNode(node);
 
     if (!isInput) {
       const nameEl = el.querySelector(".im-node-name");
-      // Select the new name after the element is on the page, ready to edit.
-      if (autoSelect) setTimeout(() => selectText(nameEl), 0);
       // "blur" happens when the editable name loses focus.
       nameEl.addEventListener("blur", () => {
         node.name = nameEl.textContent.trim() || TYPE_LABEL[type];
@@ -331,14 +335,21 @@
     return node;
   }
 
-  function selectText(el) {
-    // A Range and Selection highlight all the text for easy renaming.
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+  // Place a node so that (node.x, node.y) is the LEFT edge and VERTICAL CENTRE
+  // of its shape. Storing y as a centre (rather than the top) lets a child
+  // spawned at the parent's y line up for a straight, horizontal cable, no
+  // matter how tall either node is.
+  function positionNode(node) {
+    node.el.style.left = node.x + "px";
+    const shape = node.el.querySelector(".im-root-node, .im-import-node");
+    if (!shape) {
+      node.el.style.top = node.y + "px";
+      return;
+    }
+    // shape.offsetTop covers any padding/border on the node wrapper, so the
+    // shape's centre lands exactly on node.y.
+    node.el.style.top =
+      (node.y - shape.offsetTop - shape.offsetHeight / 2) + "px";
   }
 
   function findNode(state, id) {
@@ -548,8 +559,7 @@
         nodeEl.classList.add("im-node-dragging");
         node.x = origX + dx;
         node.y = origY + dy;
-        node.el.style.left = node.x + "px";
-        node.el.style.top = node.y + "px";
+        positionNode(node);
         redrawLinks(state);
       };
       const up = () => {
@@ -1105,18 +1115,20 @@
   // Find a spot to the right of the parent that isn't (almost) exactly on
   // top of an existing node. Cheap: tries a small fixed list of candidate
   // slots and does simple distance checks — no collision physics.
-  const SPAWN_DX = 220;          // horizontal gap from parent
+  const SPAWN_DX = 200;          // horizontal gap from parent
   const SPAWN_STEP = 70;         // vertical spacing between candidate slots
   const SPAWN_MIN_DIST = 55;     // "too close" threshold (partial overlap OK)
 
   function childSpawnPos(state, parent) {
     const baseX = parent.x + SPAWN_DX;
+    // Same centre-y as the parent: the first candidate slot is exactly level
+    // with the parent, so a single child connects with a straight cable.
     const baseY = parent.y;
 
-    // Candidate vertical offsets: 0, +1, -1, +2, -2, ... (up to 8 slots).
-    for (let i = 0; i < 8; i++) {
+    // Candidate vertical offsets: 0, +1, -1, +2, -2, ...
+    for (let i = 0; true; i++) {
       const offset = (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * SPAWN_STEP;
-      const x = baseX + (i > 3 ? 40 : 0); // shift a 2nd column if crowded
+      const x = baseX + (i * -5);
       const y = baseY + offset;
 
       // some returns true as soon as any existing node is too close.

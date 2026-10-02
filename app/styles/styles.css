@@ -1216,7 +1216,7 @@ svg.im-btn-icon {
   transition: opacity 0.12s, transform 0.12s;
   z-index: 4;
 }
-.im-node:hover .im-remove { opacity: 1; }
+.im-node:hover .im-remove { opacity: 1;  padding-bottom: 0.21rem; }
 .im-remove:hover { transform: scale(1.1); }
 .im-node.im-locked .im-remove { display: none; }
 
