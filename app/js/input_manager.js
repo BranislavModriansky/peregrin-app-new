@@ -1,27 +1,52 @@
+/*
+ * Input manager: a canvas where "nodes" form a tree and the deepest nodes
+ * can hold imported files. A node is both a JavaScript object (its data)
+ * and a visible HTML element (node.el).
+ *
+ * Reading guide:
+ * - setup() builds one manager and keeps its data in a "state" object.
+ * - wire...() functions attach event listeners; those functions run later
+ *   when the user clicks, drags, drops, scrolls, etc.
+ * - state.nodes is the list of nodes; parentId connects a child to a parent.
+ * - redrawLinks() draws the cables between nodes after positions change.
+ *
+ * JS basics used here: const names cannot be reassigned; let names can.
+ * () => ... is a function, often passed as a callback to run later.
+ * `${value}` inserts a value into a backtick-delimited template string.
+ */
 (function () {
+  // This immediately invoked function keeps names in this file out of the
+  // global namespace. "use strict" enables stricter JavaScript checks.
   "use strict";
 
+  // Run fn if the HTML is ready, or wait until the browser finishes it.
   function ready(fn) {
     if (document.readyState !== "loading") fn();
     else document.addEventListener("DOMContentLoaded", fn);
   }
 
   function initAll() {
+    // The :not(...) selector skips managers already initialized by setup().
     document.querySelectorAll(".input-manager:not([data-im-init])").forEach(setup);
   }
 
+  // Shiny can replace parts of the page, so look for new managers then too.
   ready(initAll);
   document.addEventListener("shiny:connected", initAll);
   document.addEventListener("shiny:value", () => setTimeout(initAll, 0));
 
   let uid = 0;
+  // ++uid increments the counter before using it, giving each node a unique ID.
   const nextId = (p) => `${p}-${++uid}`;
 
+  // SVG markup for the toolbar icons; these strings become button HTML.
   const ICON_FULL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="M120-120v-240h80v104l124-124 56 56-124 124h104v80H120Zm480 0v-80h104L580-324l56-56 124 124v-104h80v240H600ZM324-580 200-704v104h-80v-240h240v80H256l124 124-56 56Zm312 0-56-56 124-124H600v-80h240v240h-80v-104L636-580Z"/></svg>`;
   const ICON_PANEL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1000 1000 1000" class="im-btn-icon"><path d="m156-100-56-56 124-124H120v-80h240v240h-80v-104L156-100Zm648 0L680-224v104h-80v-240h240v80H736l124 124-56 56ZM120-600v-80h104L100-804l56-56 124 124v-104h80v240H120Zm480 0v-240h80v104l124-124 56 56-124 124h104v80H600Z"/></svg>`;
 
-  // Hierarchy: each level can only parent the next one down.
+  // Hierarchy: each level can only parent the one below it.
   const LEVELS = ["input", "set", "subset", "group", "subgroup"];
+  // indexOf finds the current level's position; +1 picks its child level.
+  // null gives "no child" when the current level is the last one.
   const childLevelOf = (type) => LEVELS[LEVELS.indexOf(type) + 1] || null;
   const canParent = (parentType, childType) =>
     childLevelOf(parentType) === childType;
@@ -30,6 +55,7 @@
   // excluding the root "input".
   function lowestLevelPresent(state) {
     let idx = -1;
+    // forEach visits every item; n is the current node.
     state.nodes.forEach((n) => {
       if (n.type === "input") return;
       const i = LEVELS.indexOf(n.type);
@@ -40,16 +66,17 @@
 
   // The level that is allowed to receive file imports.
   function importableLevel(state) {
+    // Before the first import, files go only on the deepest existing level.
     return state.importLevel || lowestLevelPresent(state);
   }
 
-  // A node may receive files only if it's at the importable level.
+  // A node may receive files only if it's at the current deepest level.
   function canImportInto(state, node) {
     if (node.type === "input") return false;
     return node.type === importableLevel(state);
   }
 
-  // Whether new children may be created below the given parent.
+  // Whether new child nodes can be created downstream of the given node.
   function canAddChild(state, parent) {
     const childType = childLevelOf(parent.type);
     if (!childType) return false;
@@ -77,41 +104,45 @@
   /* ===================================================================== */
 
   function setup(container) {
-    container.setAttribute("data-im-init", "1");
+    container.setAttribute("data-im-init", "1");  // mark this container as initialized for the input manager
 
+    // A state object = input manager. Contains all input manager information, e.g., nodes, DOM elements, view position, rules, etc..
     const state = {
       nodes: [],          // { id, type, x, y, el, name, files, parentId }
-      canvas: null,
-      viewport: null,     // panned/translated layer holding nodes + svg
-      svg: null,
-      fileInput: null,
+      canvas: null,       // main container for nodes and SVG links
+      viewport: null,     // panned/translated layer holding nodes + SVG links
+      svg: null,          // SVG element for drawing links between nodes
+      fileInput: null,    // hidden file input for uploads
       panX: 0,
       panY: 0,
-      zoom: 0.75,         // start zoomed out by default
+      zoom: 0.75,
       importLevel: null,  // once files imported, the fixed level allowed for imports
     };
 
     buildToolbar(container, state);
 
+    // createElement makes a div HTML element; appendChild puts it on the page - specifically inside the im-canvas container.
+    // Create the main canvas container for nodes and SVG links.
     const canvas = document.createElement("div");
     canvas.className = "im-canvas";
     container.appendChild(canvas);
     state.canvas = canvas;
 
-    // Viewport layer that we translate for panning.
+    // Create a viewport layer that is translated during panning.
     const viewport = document.createElement("div");
     viewport.className = "im-viewport";
     canvas.appendChild(viewport);
     state.viewport = viewport;
 
-    // SVG layer for connectors (behind nodes).
+    // Create an SVG layer for connectors (behind nodes).
+    // SVG elements need createElementNS instead of the HTML createElement.
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
     svg.classList.add("im-links");
     viewport.appendChild(svg);
     state.svg = svg;
 
-    // Hidden file input reused for all uploads.
+    // Create a hidden file input reused for all uploads.
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.multiple = true;
@@ -119,15 +150,16 @@
     container.appendChild(fileInput);
     state.fileInput = fileInput;
 
-    // Root input node.
+    // Add the root input node.
     const input = addNode(state, "input", STARTNODE_INPUT_X, STARTNODE_INPUT_Y, null);
 
-    // Default set element, connected to the input, and non-removable.
+    // Add the default, non-removable set element, connected to the input.
     const defaultSet = addNode(state, "set", STARTNODE_SET_X, STARTNODE_SET_Y, input.id, false);
     defaultSet.locked = true;
     defaultSet.el.classList.add("im-locked");
 
     wireCanvas(container, state);
+    // Register interaction handlers once. They respond to future user events.
     wirePan(state);
     wireHandleDrag(state);
     applyPan(state);
@@ -138,6 +170,7 @@
   /* ---------- Toolbar (full view button) ---------- */
 
   function buildToolbar(container, state) {
+    // Each button is created, given an action, then appended to the toolbar.
     const bar = document.createElement("div");
     bar.className = "im-toolbar";
 
@@ -188,7 +221,8 @@
     const on = !container.classList.contains("im-fullview-on");
 
     if (on) {
-      // Remember original position so we can restore later.
+      // A placeholder marks the original location while the manager lives
+      // under document.body; closing full view moves it back there.
       container._imPlaceholder = document.createComment("im-placeholder");
       container.parentNode.insertBefore(container._imPlaceholder, container);
       document.body.appendChild(container);
@@ -212,9 +246,10 @@
   }
 
   function resetPan(state) {
+    // "Home" changes the view, not the node positions or imported files.
     state.panX = 0;
     state.panY = 0;
-    state.zoom = 0.75; // match the default zoomed-out view
+    state.zoom = 0.75;
     applyPan(state);
     redrawLinks(state);
   }
@@ -230,6 +265,7 @@
   };
 
   function addNode(state, type, x, y, parentId, autoSelect = true) {
+    // x/y are positions in the canvas, not positions on the whole screen.
     const id = nextId("im-" + type);
     const el = document.createElement("div");
     el.className = "im-node im-" + type;
@@ -237,8 +273,12 @@
     el.dataset.type = type;
     el.style.left = x + "px";
     el.style.top = y + "px";
+    
+    let typeIdx = ` ${state.nodes.filter(n => n.type === type).length + 1}`;
+    if (TYPE_LABEL[type] === "Input") typeIdx = "";
 
     const isInput = type === "input";
+    // The ternary "condition ? yes : no" chooses the root's special markup.
     const shapeClass = isInput ? "im-root-node" : "im-import-node";
     const editable = isInput ? "" : 'contenteditable="true"';
 
@@ -253,11 +293,12 @@
       </svg>
     `;
 
+    // Backticks allow multiline HTML and ${...} substitutions.
     el.innerHTML = `
       <div class="${shapeClass}" title="Click or drop files to import">
         ${isInput ? "" : '<button type="button" class="im-remove" title="Remove">×</button>'}
         ${isInput ? plugIcon : ""}
-        <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}</div>
+        <div class="im-node-name" ${editable} spellcheck="false">${TYPE_LABEL[type]}${typeIdx}</div>
         <div class="im-port im-port-out" title="Add a child element">
           <span class="im-port-plus">+</span>
         </div>
@@ -266,15 +307,18 @@
     `;
 
     state.viewport.appendChild(el);
+    // Keep the data alongside the DOM element so events can update both.
     const node = {
       id, type, x, y, el,
-      name: TYPE_LABEL[type], files: [], parentId,
+      name: TYPE_LABEL[type] + typeIdx, files: [], parentId,
     };
     state.nodes.push(node);
 
     if (!isInput) {
       const nameEl = el.querySelector(".im-node-name");
+      // Select the new name after the element is on the page, ready to edit.
       if (autoSelect) setTimeout(() => selectText(nameEl), 0);
+      // "blur" happens when the editable name loses focus.
       nameEl.addEventListener("blur", () => {
         node.name = nameEl.textContent.trim() || TYPE_LABEL[type];
         nameEl.textContent = node.name;
@@ -288,6 +332,7 @@
   }
 
   function selectText(el) {
+    // A Range and Selection highlight all the text for easy renaming.
     el.focus();
     const range = document.createRange();
     range.selectNodeContents(el);
@@ -297,6 +342,7 @@
   }
 
   function findNode(state, id) {
+    // find returns the first match (or undefined); || null normalizes no match.
     return state.nodes.find((n) => n.id === id) || null;
   }
 
@@ -305,6 +351,7 @@
     if (node.locked) return;           // default set is protected
 
     // Collect the node and all its descendants.
+    // A Set holds unique IDs. Repeat until even grandchildren are included.
     const toRemove = new Set([node.id]);
     let changed = true;
     while (changed) {
@@ -317,6 +364,7 @@
       });
     }
 
+    // filter builds a new list; removed nodes also leave the visible page.
     state.nodes = state.nodes.filter((n) => {
       if (toRemove.has(n.id)) {
         n.el.remove();
@@ -333,13 +381,16 @@
 
   function wireCanvas(container, state) {
     const canvas = state.canvas;
+    // Remember which node opened the shared hidden file picker.
     let activeNode = null;
 
     // Suppress the native menu across the whole manager (no node creation).
     container.addEventListener("contextmenu", (e) => e.preventDefault());
 
-    // Remove (X) button.
+    // Listen on the canvas rather than on each button: clicks from nodes
+    // created later "bubble" up to this same listener.
     canvas.addEventListener("click", (e) => {
+      // closest searches the clicked element and its ancestors.
       const x = e.target.closest(".im-remove");
       if (!x) return;
       e.stopPropagation();
@@ -358,6 +409,7 @@
       if (!chip || !nodeEl) return;
       const node = findNode(state, nodeEl.dataset.id);
       if (!node) return;
+      // DOM children form a collection; convert it to an array to use indexOf.
       const index = Array.from(chip.parentNode.children).indexOf(chip);
       if (index > -1) {
         removeFile(state, node, index);
@@ -366,12 +418,14 @@
 
     // Click shape -> open file dialog.
     canvas.addEventListener("click", (e) => {
+      // These controls have their own behavior, not file selection.
       if (e.target.closest(".im-remove")) return;
       if (e.target.closest(".im-file-chip-remove")) return;
       if (e.target.closest(".im-node-name")) return;
       if (e.target.closest(".im-port")) return;
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
+      // A mouse release after dragging also fires click; ignore that click.
       if (canvas.dataset.justDragged === "1") { canvas.dataset.justDragged = ""; return; }
       if (
         e.target.closest(".im-root-node") ||
@@ -382,12 +436,14 @@
         if (node.type === "input") return; // input circle can't hold files
         if (!canImportInto(state, node)) return; // only lowest-level nodes
         activeNode = node;
+        // Clear the old choice so selecting the same file again fires change.
         state.fileInput.value = "";
         state.fileInput.click();
       }
     });
 
     state.fileInput.addEventListener("change", () => {
+      // File selection happens later, after the browser's picker closes.
       if (activeNode) addFiles(state, activeNode, state.fileInput.files);
       activeNode = null;
     });
@@ -404,6 +460,7 @@
   /* ---------- File handling ---------- */
 
   function addFiles(state, node, fileList) {
+    // The browser supplies a FileList; spread (...) copies it into an array.
     const files = [...fileList];
     if (!files.length) return;
 
@@ -417,6 +474,7 @@
     const list = node.el.querySelector(".im-node-files");
 
     files.forEach((f) => {
+      // Store each File object, and show its name as a removable "chip".
       node.files.push(f);
       const chip = document.createElement("div");
       chip.className = "im-file-chip";
@@ -433,6 +491,7 @@
   }
 
   function removeFile(state, node, index) {
+    // splice removes the item from the data; remove() deletes its HTML chip.
     if (index >= 0 && index < node.files.length) {
       node.files.splice(index, 1);
     }
@@ -445,6 +504,8 @@
   }
 
   function notifyShinyFiles(node) {
+    // If the Shiny host exists, tell it about this node's current file list.
+    // map creates a new array containing only each file's name and size.
     if (window.Shiny && Shiny.setInputValue) {
       Shiny.setInputValue(
         "input_manager_files",
@@ -476,9 +537,12 @@
       const origX = node.x, origY = node.y;
       let moved = false;
 
+      // Mouse events use screen pixels; divide by zoom for canvas distances.
       const move = (ev) => {
         const dx = (ev.clientX - startX) / state.zoom;
         const dy = (ev.clientY - startY) / state.zoom;
+        // Ignore tiny movements (under ~4px): this is a "dead zone" so a
+        // slightly shaky click is not mistaken for a drag.
         if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
         moved = true;
         nodeEl.classList.add("im-node-dragging");
@@ -489,6 +553,8 @@
         redrawLinks(state);
       };
       const up = () => {
+        // Temporary document listeners track movement even outside the node.
+        // Remove them when the mouse button is released.
         document.removeEventListener("mousemove", move);
         document.removeEventListener("mouseup", up);
         nodeEl.classList.remove("im-node-dragging");
@@ -501,6 +567,10 @@
 
   /* ---------- Port dragging (re-plug into a new parent) ---------- */
 
+  // NOTE: This function is currently unused — nothing calls wirePortDrag().
+  // Re-plugging a node into a new parent is instead handled by dragging the
+  // small round handle on a cable (see wireHandleDrag below). This is kept
+  // as an alternative "drag out from the + port" implementation.
   function wirePortDrag(state) {
     const canvas = state.canvas;
 
@@ -528,6 +598,7 @@
         highlightDrop(state, ev, parent);
       };
       const up = (ev) => {
+        // Discard the preview cable, then connect to a valid child if found.
         document.removeEventListener("mousemove", move);
         document.removeEventListener("mouseup", up);
         temp.remove();
@@ -566,6 +637,7 @@
   }
 
   function elementNodeAt(clientX, clientY) {
+    // elementsFromPoint checks everything under the pointer, including SVG.
     const els = document.elementsFromPoint(clientX, clientY);
     for (const el of els) {
       const node = el.closest && el.closest(".im-node");
@@ -579,6 +651,7 @@
   function wireHandleDrag(state) {
     const svg = state.svg;
 
+    // The small circle on a cable lets the user change that child's parent.
     svg.addEventListener("mousedown", (e) => {
       const handle = e.target.closest(".im-link-handle");
       if (!handle) return;
@@ -632,13 +705,18 @@
 
   /* ---------- Curved connectors ---------- */
 
+  // Convert a browser-window point into a point relative to the canvas's
+  // top-left corner (ignores pan/zoom).
   function canvasPoint(canvas, clientX, clientY) {
+    // clientX/Y are browser-window coordinates; subtract the canvas origin.
     const r = canvas.getBoundingClientRect();
     return { x: clientX - r.left, y: clientY - r.top };
   }
 
   // Point in the viewport's (untranslated) coordinate space.
   function viewportPoint(state, clientX, clientY) {
+    // The viewport rectangle already reflects pan/zoom. Divide by zoom to
+    // return to the same coordinates used by node.x, node.y and the SVG.
     const r = state.viewport.getBoundingClientRect();
     return {
       x: (clientX - r.left) / state.zoom,
@@ -646,6 +724,8 @@
     };
   }
 
+  // Where a cable should START: the centre of a node's output ("+") port,
+  // expressed in the viewport's unscaled coordinates.
   function portPoint(state, node) {
     const vr = state.viewport.getBoundingClientRect();
     const portEl = node.el.querySelector(".im-port-out");
@@ -656,6 +736,8 @@
     };
   }
 
+  // Where a cable should END: the left-middle edge of a node's shape (its
+  // "input" side), expressed in the viewport's unscaled coordinates.
   function inPoint(state, node) {
     const vr = state.viewport.getBoundingClientRect();
     const shape = node.el.querySelector(".im-root-node, .im-import-node");
@@ -668,6 +750,10 @@
 
   // Cubic bezier with horizontal ease-in / ease-out control points.
   function bezier(x1, y1, x2, y2) {
+    // Returns an SVG path string. "M x y" moves the pen to the start point;
+    // "C c1 c2 end" draws a curve that begins at the start and ends at `end`.
+    // The two control points (c1, c2) pull the curve but it does NOT pass
+    // through them — here they sit left/right of the ends to make it bow.
     const dx = Math.max(40, Math.abs(x2 - x1) * 0.5);
     const c1x = x1 + dx, c1y = y1;
     const c2x = x2 - dx, c2y = y2;
@@ -693,6 +779,8 @@
     svg.setAttribute("height", h);
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
 
+    // Delete old permanent cables and handles, then rebuild from parentId.
+    // Keep any temporary cable that is currently being dragged.
     svg.querySelectorAll(".im-link:not(.im-link-temp), .im-link-handle")
       .forEach((p) => p.remove());
 
@@ -720,6 +808,10 @@
       svg.appendChild(handle);
     });
   }
+  // NOTE: Unused + duplicated. redrawWeight() is never called and reads
+  // state.weight, which is never created in setup(), so it would return
+  // immediately. An identical copy also appears further below. Kept as an
+  // experimental "grid sags under each node's weight" visual effect.
   // Paint a soft radial darkening at each node's centre so the dot grid
   // appears to sag under the element's "weight".
   function redrawWeight(state) {
@@ -776,6 +868,7 @@
 
   // Evaluate the cubic bezier at parameter t (0..1).
   function bezierAt(cp, t) {
+    // t=0 is the parent end; t=1 is the child end.
     const u = 1 - t;
     const a = u * u * u;
     const b = 3 * u * u * t;
@@ -793,6 +886,7 @@
     const targetDist = 46; // distance along the curve from the parent
 
     // Walk the curve accumulating length until we reach targetDist.
+    // The SVG curve has no simple distance lookup, so sample 40 short pieces.
     const steps = 40;
     let prev = bezierAt(cp, 0);
     let acc = 0;
@@ -819,6 +913,7 @@
   function wireFileDrop(state) {
     const canvas = state.canvas;
     canvas.addEventListener("dragover", (e) => {
+      // Prevent the browser's default file-opening action to allow dropping.
       e.preventDefault();
       const nodeEl = e.target.closest(".im-node");
       canvas.querySelectorAll(".im-drop-hover")
@@ -836,6 +931,7 @@
       const nodeEl = e.target.closest(".im-node");
       if (!nodeEl) return;
       const node = findNode(state, nodeEl.dataset.id);
+      // Apply the same import rules as the click-to-choose file picker.
       if (node && node.type !== "input" && canImportInto(state, node) &&
           e.dataTransfer.files.length) {
         addFiles(state, node, e.dataTransfer.files);
@@ -846,6 +942,7 @@
   /* ---------- Panning ---------- */
 
   function applyPan(state) {
+    // CSS transform moves/scales the whole layer, including nodes and links.
     state.viewport.style.transform =
       `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
     // Move + scale the grid pattern with the pan/zoom.
@@ -855,6 +952,7 @@
       `${state.panX}px ${state.panY}px`;
   }
 
+  // Keep zoom between 0.3x and 2.5x, however far the user scrolls.
   const clampZoom = (z) => Math.min(2.5, Math.max(0.3, z));
 
   function zoomBy(state, factor) {
@@ -865,6 +963,7 @@
 
   // Zoom keeping the point (cx, cy) in canvas-space anchored under the cursor.
   function zoomAt(state, factor, cx, cy) {
+    // Adjust the pan offsets as zoom changes so the chosen point stays put.
     const newZoom = clampZoom(state.zoom * factor);
     const ratio = newZoom / state.zoom;
     if (ratio === 1) return;
@@ -896,6 +995,7 @@
 
     // Drag empty space to pan.
     canvas.addEventListener("mousedown", (e) => {
+      // Do not pan when an interactive node or cable control was clicked.
       if (e.button !== 0) return;
       if (e.target.closest(".im-node")) return;
       if (e.target.closest(".im-port")) return;
@@ -913,6 +1013,7 @@
         redrawLinks(state);
       };
       const up = () => {
+        // Stop tracking once the drag ends, even if it ended off the canvas.
         document.removeEventListener("mousemove", move);
         document.removeEventListener("mouseup", up);
         canvas.classList.remove("im-panning");
@@ -944,6 +1045,7 @@
       if (!canAddChild(state, parent)) return; // depth locked by imports
 
       const pos = childSpawnPos(state, parent);
+      // The new node points back to its parent via parent.id.
       addNode(state, childType, pos.x, pos.y, parent.id);
       redrawLinks(state);
       refreshPortAvailability(state);
@@ -953,6 +1055,8 @@
     });
   }
 
+  // NOTE: Unused + duplicated (identical copy appears above). Never called,
+  // and state.weight is never set, so this does nothing as written.
   // Paint a soft radial darkening at each node's centre so the dot grid
   // appears to sag under the element's "weight".
   function redrawWeight(state) {
@@ -1015,6 +1119,7 @@
       const x = baseX + (i > 3 ? 40 : 0); // shift a 2nd column if crowded
       const y = baseY + offset;
 
+      // some returns true as soon as any existing node is too close.
       const tooClose = state.nodes.some((n) => {
         const dx = n.x - x;
         const dy = n.y - y;
@@ -1026,10 +1131,13 @@
     return { x: baseX + 30, y: baseY + 25 };
   }
 
+  // Build a modal "Remove this node?" dialog and wire its buttons. Only
+  // actually removes the node if the user confirms.
   function confirmRemove(container, state, node) {
     // Only one dialog at a time.
     if (container.querySelector(".im-confirm-overlay")) return;
 
+    // The message warns when removal also affects descendants.
     const hasChildren = state.nodes.some((n) => n.parentId === node.id);
 
     const overlay = document.createElement("div");
@@ -1051,6 +1159,7 @@
 
     const close = () => overlay.remove();
     overlay.addEventListener("click", (e) => {
+      // target === overlay means the click was on the backdrop, not the box.
       if (e.target === overlay) close(); // click outside cancels
     });
     overlay.querySelector(".im-confirm-cancel").addEventListener("click", close);
@@ -1064,11 +1173,13 @@
     });
   }
 
+  // Wipe the canvas back to its starting layout (root input + locked set).
   function resetManager(state) {
     // Remove every node from the DOM and state.
     state.nodes.forEach((n) => n.el.remove());
     state.nodes = [];
     state.importLevel = null;
+    // IDs do not restart: the same page can have other manager instances.
 
     // Restore the default layout: root input + locked default set.
     const input = addNode(state, "input", STARTNODE_INPUT_X, STARTNODE_INPUT_Y, null);
@@ -1081,7 +1192,9 @@
     refreshPortAvailability(state);
   }
 
+  // Build a modal "Reset everything?" dialog; only resets if confirmed.
   function confirmReset(container, state) {
+    // Ask first because resetManager destroys every custom node.
     if (container.querySelector(".im-confirm-overlay")) return;
 
     const overlay = document.createElement("div");
@@ -1118,6 +1231,7 @@
 
   // True if any node on the canvas currently holds imported files.
   function anyFilesPresent(state) {
+    // some stops as soon as it finds a node with at least one file.
     return state.nodes.some((n) => n.files && n.files.length > 0);
   }
 
@@ -1128,4 +1242,4 @@
     }
     refreshPortAvailability(state);
   }
-})();
+})(); // Call the wrapper immediately, after defining its functions.
