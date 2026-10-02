@@ -27,7 +27,7 @@
   --nav-link-color: #5f6368;
   --nav-link-hover-bg: #e8e8e8;
   --nav-link-hover-color: #202124;
-  --nav-active-color: #3c4043;
+  --nav-active-color: #2f3233;
   --nav-active-color-underline: #3c4043e0;
   --nav-active-gradient: linear-gradient(to bottom, #edf0f4, #fff, #fff);
   --header-title-color: #3c4043;
@@ -130,6 +130,9 @@ body {
   gap: 0 !important;
 }
 
+.html-fill-item {
+  font-size: 0.8rem !important;
+}
 
 .sidebar {
   background-color: var(--sidebar-bg) !important;
@@ -205,8 +208,9 @@ div#memory_usage_chart {
   gap: 0 5rem;
   border-bottom: 1px solid transparent !important;
   background: linear-gradient(to right, rgb(228, 229, 231) 35%, transparent 95%) bottom/100% 1px no-repeat !important;
-  /* letter-spacing: 0.04rem !important; */
+  letter-spacing: 0.04rem !important;
   font-family: var(--font-family-head) !important;
+  -webkit-text-stroke: 0.25px rgba(0, 0, 0, 0.25);
 }
 .navbar>.container-fluid {
   display: inline-flex;
@@ -249,7 +253,7 @@ div#memory_usage_chart {
 .nav-link:hover {
   border: none !important;
   border-radius:0 !important;
-  /* font-weight: 600 !important; */
+  font-weight: 400 !important;
   font-size: 1.1rem !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -261,15 +265,16 @@ div#memory_usage_chart {
 .nav-link.active,
 .nav-item.active > .nav-link {
   color: var(--nav-active-color) !important;
+  font-weight: 400 !important;
 }
 
 .nav-link.active::after,
 .nav-item.active > .nav-link::after {
   content: "";
   position: absolute;
-  bottom: 0.4rem;
-  left: 0.3rem;
-  right: 0.3rem;
+  bottom: 0.6rem;
+  left: 0.35rem;
+  right: 0.35rem;
   height: 2px;
   background-color: var(--nav-active-color-underline);
   border-radius: 1px;
@@ -286,10 +291,12 @@ li.nav-item:last-child {
 
 .app-title {
   /* font-weight: 600 !important; */
-  font-size: 1.6rem !important;
+  font-size: 1.8rem !important;
   color: var(--color-secondary) !important;
   text-decoration: none !important;
   font-family: var(--font-family-head) !important;
+  -webkit-text-stroke: 0.85px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.06em !important;
 }
 
 span.navbar-brand {
@@ -534,6 +541,7 @@ bslib-input-dark-mode {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  -webkit-text-stroke: 0.50px rgba(0, 0, 0, 0.25)
 }
 
 .qp-actions { display: flex; gap: 2px; }

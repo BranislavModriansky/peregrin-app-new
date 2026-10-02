@@ -51,28 +51,34 @@ app_ui = ui.page_sidebar(
         id="main_nav",
         selected="Menu",
     ),
-    ui.head_content(
-        ui.input_dark_mode(id="app_theme"),
-        ui.include_css(path_to_css / "styles.css"),
-        ui.include_js(path_to_js / "theme_manager.js", method="inline"),
-        ui.include_js(path_to_js / "input_manager.js", method="inline"),
-        ui.include_js(path_to_js / "quadpanel.js", method="inline"),
-        ui.include_js(path_to_js / "ai_studio.js", method="inline"),
-    ),
     ui.tags.div(
         ui.tags.div(class_="grid-wall"),
         ui.tags.div(class_="grid-left"),
         ui.tags.div(class_="grid-right"),
         class_="grid-bg",
     ),
-    ui.div(
-        "",
-        ui.HTML("""
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Instrument+Sans">
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Manrope">
-        """),
-        class_="invisible-injector"
+    # ui.div(
+    #     "",
+    #     ui.HTML("""
+    #         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+    #         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Instrument+Sans">
+    #         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Manrope">
+    #     """),
+    #     class_="invisible-injector"
+    # ),
+    ui.head_content(
+        ui.tags.link(rel="preconnect", href="https://fonts.googleapis.com"),
+        ui.tags.link(rel="preconnect", href="https://fonts.gstatic.com", crossorigin=""),
+        ui.tags.link(
+            rel="stylesheet",
+            href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Inter:wght@400..700&family=Manrope:wght@400..700&display=swap",
+        ),
+        ui.input_dark_mode(id="app_theme"),
+        ui.include_css(path_to_css / "styles.css"),
+        ui.include_js(path_to_js / "theme_manager.js", method="inline"),
+        ui.include_js(path_to_js / "input_manager.js", method="inline"),
+        ui.include_js(path_to_js / "quadpanel.js", method="inline"),
+        ui.include_js(path_to_js / "ai_studio.js", method="inline"),
     ),
     fillable=False,
 )

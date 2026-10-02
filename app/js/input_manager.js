@@ -325,6 +325,7 @@
       return true;
     });
 
+    refreshImportLock(state);
     redrawLinks(state);
   }
 
