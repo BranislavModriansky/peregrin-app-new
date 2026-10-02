@@ -847,6 +847,8 @@ bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; 
 
 .directory-browser {
   position: relative;
+  display: flex;
+  align-items: center;
   border-radius: var(--radius);
   border-top-right-radius: var(--button-radius);
   border-bottom-right-radius: var(--button-radius);
@@ -856,6 +858,65 @@ bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; 
   overflow: hidden;
   margin: 0.4rem 0 0.6rem 0;
   width: 100%;
+}
+
+.directory-path-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  /* leave room on the right for the browse button */
+  padding: 0 3rem 0 0.8rem;
+  font-family: var(--font-family-data);
+  font-size: 0.82rem;
+  color: var(--im-name-color);
+  white-space: nowrap;
+  overflow: hidden;
+  /* no visible scrollbar — scrolling is handled via wheel events in JS */
+  scrollbar-width: none;
+}
+
+.directory-path-input::-webkit-scrollbar {
+  display: none;
+}
+
+.directory-path-input::placeholder {
+  color: var(--btn-color);
+  opacity: 0.7;
+}
+
+.directory-browse-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  transform: translateY(-50%);
+  width: 2.1rem;
+  height: 2.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--im-btn-border);
+  background: var(--im-btn-bg);
+  color: var(--im-btn-color);
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.directory-browse-btn:hover {
+  border-color: var(--im-btn-hover-border);
+  color: var(--im-btn-hover-color);
+  background: var(--btn-hover-bg);
+}
+
+.directory-browse-btn svg {
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
 }
 
 .directory-browser-shadow {

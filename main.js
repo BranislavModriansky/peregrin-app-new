@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron/main')
+const { app, BrowserWindow, dialog, ipcMain } = require('electron/main')
 const { spawn } = require('child_process')
 const http = require('http')
 const path = require('path')
@@ -48,11 +48,26 @@ const createWindow = () => {
       color: '#00000000',
       symbolColor: '#5f6368',
       height: 64 // match --navbar-height in px
+    },
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
     }
   })
   win.setMenuBarVisibility(false)
   win.loadURL(`http://${HOST}:${PORT}/`)
 }
+
+// Native folder-only picker. Returns the absolute path; never reads contents.
+ipcMain.handle('dialog:pickDirectory', async (event, defaultPath) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  const options = { properties: ['openDirectory'] }
+  if (typeof defaultPath === 'string' && defaultPath.trim()) {
+    options.defaultPath = defaultPath.trim()
+  }
+  const result = await dialog.showOpenDialog(win, options)
+  if (result.canceled || !result.filePaths.length) return null
+  return result.filePaths[0]
+})
 
 app.whenReady().then(async () => {
   startPythonServer()
