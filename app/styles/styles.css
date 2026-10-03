@@ -386,10 +386,16 @@ bslib-input-dark-mode {
   align-items: center;
   gap: 0.5rem;
 }
-.qp-nav-link::before {
-  content: "○";
-  font-size: 0.8rem;
-  line-height: 1;
+/* Circle marker drawn with CSS (font-independent); shared by the panel grip. */
+.qp-nav-link::before,
+.qp-grip::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
   flex: 0 0 auto;
 }
 .qp-nav-link:hover {
@@ -401,7 +407,7 @@ bslib-input-dark-mode {
   background: transparent;
 }
 .qp-nav-active::before {
-  content: "⬤";
+  background: currentColor;
 }
 
 /* Back button styled like a subtle icon control */
@@ -545,7 +551,28 @@ bslib-input-dark-mode {
 }
 
 .qp-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.qp-grip { cursor: grab; color: var(--grip-color); font-size: 0.85rem; align-self: center; }
+.qp-grip {
+  cursor: grab;
+  color: var(--nav-link-color);
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.qp-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+.qp-nav-back .qp-icon { width: 18px; height: 18px; }
+/* Collapse button swaps between "minimize" and "restore" glyphs. */
+.qp-collapse .qp-icon-expand { display: none; }
+.qp-collapsed .qp-collapse .qp-icon-collapse,
+.qp-ghost-collapsed .qp-collapse .qp-icon-collapse { display: none; }
+.qp-collapsed .qp-collapse .qp-icon-expand,
+.qp-ghost-collapsed .qp-collapse .qp-icon-expand { display: block; }
 .qp-grip:active { cursor: grabbing; }
 .qp-title {
   /* font-weight: 600; */
@@ -568,6 +595,10 @@ bslib-input-dark-mode {
   color: var(--btn-color);
   font-size: 0.7rem;
   line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .qp-btn:hover { background: var(--btn-hover-bg); color: var(--btn-hover-color); }
 
@@ -892,7 +923,7 @@ bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; 
   top: 50%;
   right: 0.2rem;
   transform: translateY(-50%);
-  width: 3.8rem;
+  width: 3.4rem;
   height: 2.1rem;
   display: flex;
   align-items: center;
@@ -905,6 +936,9 @@ bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; 
   padding: 0;
   z-index: 2;
   transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.directory-browse-btn > svg {
+  transform: scale(1.35);
 }
 
 .directory-browse-btn:hover {

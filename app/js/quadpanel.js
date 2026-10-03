@@ -242,6 +242,7 @@
     slot.classList.toggle("qp-collapsed-top", collapse && isTop);
     slot.classList.toggle("qp-collapsed-bottom", collapse && !isTop);
 
+
     col.classList.toggle(
       "qp-col-collapsed",
       col.querySelector(".qp-collapsed") !== null
@@ -398,7 +399,7 @@
         // Collapsed slots keep their header inside the panel and hide the body.
         // Drag only the collapsed representation (panel with hidden body).
         ghost = document.createElement("div");
-        ghost.classList.add("qp-ghost");
+        ghost.classList.add("qp-ghost", "qp-ghost-collapsed");
         ghost.style.width = rect.width + "px";
         ghost.style.height = rect.height + "px";
         ghost.style.left = rect.left + "px";
@@ -551,6 +552,15 @@
 
       const single = slot.classList.contains("qp-active-slot");
       const collapsed = slot.classList.contains("qp-collapsed");
+
+      // Keep the collapse button's tooltip in sync with the slot state
+      // (panels can be swapped into collapsed slots).
+      const btn = header.querySelector(".qp-collapse");
+      if (btn) {
+        const label = collapsed ? "Expand" : "Collapse";
+        btn.title = label;
+        btn.setAttribute("aria-label", label);
+      }
 
       if (single || collapsed) {
         // Keep header inside the panel (default in-panel styling).
