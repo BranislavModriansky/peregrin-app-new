@@ -890,9 +890,9 @@ bslib-input-dark-mode { position: absolute !important; left: 1.2rem !important; 
 .directory-browse-btn {
   position: absolute;
   top: 50%;
-  right: 0.25rem;
+  right: 0.2rem;
   transform: translateY(-50%);
-  width: 2.1rem;
+  width: 3.8rem;
   height: 2.1rem;
   display: flex;
   align-items: center;
