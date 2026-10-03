@@ -8,7 +8,7 @@ menu_content = ui.div(
                     type="text",
                     id="directory_path_input",
                     class_="directory-path-input",
-                    placeholder="Load a local directory...",
+                    placeholder="Load files from a directory...",
                     spellcheck="false",
                     autocomplete="off",
                 ),
